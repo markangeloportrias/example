@@ -3448,7 +3448,7 @@
           statusCell.style.padding = "10px 8px";
           const reviewStatus = getProcedureRecordReviewStatus(rec);
           statusCell.className = `record-status-cell status-${reviewStatus || "submitted"}`;
-          const statusLabels = { verified: "Verified", invalid: "Invalid", reviewed: "Under Review", under_review: "Under Review", needs_revision: "Needs Revision", submitted: "Submitted", resubmitted: "Submitted" };
+          const statusLabels = { verified: "Verified", invalid: "Invalid", reviewed: "Under Review", under_review: "Under Review", needs_revision: "Changes Requested", submitted: "Submitted", resubmitted: "Resubmitted", draft: "Draft" };
           const statusIcons = { verified: "fa-circle-check", invalid: "fa-circle-xmark", reviewed: "fa-clock", under_review: "fa-clock", needs_revision: "fa-triangle-exclamation", submitted: "fa-clock", resubmitted: "fa-clock" };
           const statusStyle = {
             verified: "background-color:#d1fae5 !important;color:#047857 !important;border:1px solid #34d399 !important;",
@@ -4033,6 +4033,7 @@
           .trim()
           .toLowerCase()
           .replace(/[\s-]+/g, "_");
+        if (status === "changes_requested") return "needs_revision";
         if (status === "verified") return "verified";
         if (status === "invalid") return "invalid";
         if (
