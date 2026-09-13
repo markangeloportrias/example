@@ -220,7 +220,7 @@ function databaseTableColumns(PDO $pdo, string $table): array
 function schoolYearsWithBlocks(PDO $pdo): array
 {
     $years = $pdo->query("SELECT y.id,y.label,y.status,y.created_at,COUNT(DISTINCT b.id) AS block_count,COUNT(DISTINCT s.student_id) AS student_count FROM school_years y LEFT JOIN student_blocks b ON b.school_year_id=y.id AND b.archived_at IS NULL LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE y.archived_at IS NULL GROUP BY y.id,y.label,y.status,y.created_at,y.start_year ORDER BY y.start_year DESC")->fetchAll();
-    $blocks = $pdo->prepare("SELECT b.id,b.label,y.label AS school_year,b.status,b.created_at,COUNT(DISTINCT s.student_id) AS student_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE b.school_year_id=? AND b.archived_at IS NULL GROUP BY b.id,b.label,y.label,b.status,b.created_at ORDER BY b.label");
+    $blocks = $pdo->prepare("SELECT b.id,b.label,y.label AS school_year,b.status,b.created_at,COUNT(DISTINCT s.student_id) AS student_count, COUNT(DISTINCT c.id) AS record_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL LEFT JOIN case_records c ON c.student_id=s.student_id AND c.academic_year=y.label AND c.archived_at IS NULL WHERE b.school_year_id=? AND b.archived_at IS NULL GROUP BY b.id,b.label,y.label,b.status,b.created_at ORDER BY b.label");
     foreach ($years as &$year) {
         $blocks->execute([$year['id']]);
         $year['blocks'] = $blocks->fetchAll();
@@ -357,7 +357,7 @@ try {
     if ($resource === 'block-directory' && $method === 'GET') {
         currentUser($pdo, ['admin', 'instructor']);
         $year=trim((string)($_GET['school_year']??''));
-        $stmt=$pdo->prepare("SELECT b.id,b.label,y.label AS school_year,b.status,b.created_at,COUNT(DISTINCT s.student_id) AS student_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE b.archived_at IS NULL ".($year !== '' ? 'AND y.label=?' : '')." GROUP BY b.id,b.label,y.label,b.status,b.created_at,y.start_year ORDER BY y.start_year DESC,b.label");
+        $stmt=$pdo->prepare("SELECT b.id,b.label,y.label AS school_year,b.status,b.created_at,COUNT(DISTINCT s.student_id) AS student_count, COUNT(DISTINCT c.id) AS record_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL LEFT JOIN case_records c ON c.student_id=s.student_id AND c.academic_year=y.label AND c.archived_at IS NULL WHERE b.archived_at IS NULL ".($year !== '' ? 'AND y.label=?' : '')." GROUP BY b.id,b.label,y.label,b.status,b.created_at,y.start_year ORDER BY y.start_year DESC,b.label");
         $stmt->execute($year !== '' ? [$year] : []);
         respond(['ok'=>true,'blocks'=>$stmt->fetchAll()]);
     }
@@ -711,7 +711,7 @@ try {
         }
         if ($method === 'GET') {
             $year = trim((string)($_GET['school_year'] ?? ''));
-            $stmt = $pdo->prepare('SELECT b.id, b.label, y.label AS school_year, b.status, b.created_at, COUNT(DISTINCT s.student_id) AS student_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE b.archived_at IS NULL '.($year !== '' ? 'AND y.label=?' : '').' GROUP BY b.id,b.label,y.label,b.status,b.created_at,y.start_year ORDER BY y.start_year DESC,b.label');
+            $stmt = $pdo->prepare('SELECT b.id, b.label, y.label AS school_year, b.status, b.created_at, COUNT(DISTINCT s.student_id) AS student_count, COUNT(DISTINCT c.id) AS record_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL LEFT JOIN case_records c ON c.student_id=s.student_id AND c.academic_year=y.label AND c.archived_at IS NULL WHERE b.archived_at IS NULL '.($year !== '' ? 'AND y.label=?' : '').' GROUP BY b.id,b.label,y.label,b.status,b.created_at,y.start_year ORDER BY y.start_year DESC,b.label');
             $stmt->execute($year !== '' ? [$year] : []);
             respond(['ok' => true, 'blocks' => $stmt->fetchAll()]);
         }
