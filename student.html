@@ -2796,14 +2796,7 @@
         caseNumber.append(document.createTextNode(config.caseNo || "Unnumbered case"));
         metadata.append(procedure, caseNumber);
 
-        const archiveButton = document.createElement("button");
-        archiveButton.type = "button";
-        archiveButton.className = "feedback-archive-toggle";
-        archiveButton.innerHTML = archived
-          ? '<i class="fas fa-arrow-left" aria-hidden="true"></i><span>Active comments</span>'
-          : '<i class="fas fa-box-archive" aria-hidden="true"></i><span>Archive</span>';
-        archiveButton.addEventListener("click", () => openInstructorFeedback(config.record, !archived));
-        context.append(metadata, archiveButton);
+        context.appendChild(metadata);
 
         const heading = document.createElement("div");
         heading.className = "feedback-stack-heading";
@@ -2836,66 +2829,7 @@
             author.append(authorName, timestamp);
             identity.appendChild(author);
 
-            const action = document.createElement("button");
-            action.type = "button";
-            action.className = archived ? "feedback-comment-action restore" : "feedback-comment-action trash";
-            action.disabled = String(comment.id || "").startsWith("legacy-");
-            action.title = action.disabled ? "This older remark has no saved comment to archive" : archived ? "Restore comment" : "Move comment to archive";
-            action.setAttribute("aria-label", action.title);
-            action.innerHTML = `<i class="fas ${archived ? "fa-rotate-left" : "fa-trash-can"}" aria-hidden="true"></i>`;
-            action.addEventListener("click", async () => {
-              if (String(comment.id || "").startsWith("legacy-")) return;
-              action.disabled = true;
-              action.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>';
-              const results = await Promise.all((comment.duplicateIds || [comment.id]).map((commentId) => archived
-                ? ApiClient.restoreCaseComment(commentId)
-                : ApiClient.archiveCaseComment(commentId)));
-              if (results.some((result) => !result?.ok)) {
-                showOptionPane({ title: "Unable to Update Comment", message: results.find((result) => !result?.ok)?.message || "The comment could not be updated." });
-                return;
-              }
-              await openInstructorFeedback(config.record, archived);
-            });
-            header.append(identity, action);
-
-            if (archived) {
-              const deleteAction = document.createElement("button");
-              deleteAction.type = "button";
-              deleteAction.className = "feedback-comment-action delete";
-              deleteAction.title = "Delete comment permanently";
-              deleteAction.setAttribute("aria-label", deleteAction.title);
-              deleteAction.innerHTML = '<i class="fas fa-trash" aria-hidden="true"></i>';
-              deleteAction.addEventListener("click", () => {
-                if (deleteAction.dataset.confirmOpen === "1" || deleteAction.dataset.busy === "1") return;
-                deleteAction.dataset.confirmOpen = "1";
-                showOptionPane({
-                  title: "Delete Archived Comment?",
-                  message: "Warning: this archived instructor comment will be permanently deleted. This cannot be undone.",
-                  buttons: [
-                    { label: "Keep Comment", variant: "secondary", onClick: () => { delete deleteAction.dataset.confirmOpen; } },
-                    {
-                      label: "Delete Permanently",
-                      variant: "danger",
-                      onClick: async () => {
-                        delete deleteAction.dataset.confirmOpen;
-                        if (String(comment.id || "").startsWith("legacy-")) return;
-                        deleteAction.dataset.busy = "1";
-                        deleteAction.disabled = true;
-                        const results = await Promise.all((comment.duplicateIds || [comment.id]).map((commentId) => ApiClient.permanentlyDeleteCaseComment(commentId)));
-                        if (results.some((result) => !result?.ok)) {
-                          delete deleteAction.dataset.busy;
-                          deleteAction.disabled = false;
-                          showOptionPane({ title: "Unable to Delete Comment", message: results.find((result) => !result?.ok)?.message || "The archived comment could not be deleted." });
-                          return;
-                        }
-                        await openInstructorFeedback(config.record, true);
-                      },
-                    },
-                  ],
-                });
-              });
-              header.appendChild(deleteAction);
-            }
+            header.appendChild(identity);
 
             const body = document.createElement("div");
             body.className = "feedback-comment-body";
@@ -2905,13 +2839,7 @@
           });
         }
 
-        const note = document.createElement("div");
-        note.className = "feedback-review-note";
-        note.innerHTML = archived
-          ? '<i class="fas fa-shield-halved" aria-hidden="true"></i><span>Archived comments can be restored or permanently deleted.</span>'
-          : '<i class="fas fa-circle-info" aria-hidden="true"></i><span>Comments are ordered newest first. Trash moves a comment to the archive without permanently deleting it.</span>';
-
-        card.append(context, heading, list, note);
+        card.append(context, heading, list);
         optionPaneMessage.appendChild(card);
       }
       function showOptionPane(config) {
