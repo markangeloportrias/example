@@ -1537,7 +1537,7 @@
 <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20260911-chat-identity-1"></script>
+    <script src="assets/js/api-client.js?v=20260913-feedback-metadata-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -2675,7 +2675,7 @@
       function getInstructorComments(rec) {
         if (rec.feedbackCommentsLoaded) return Array.isArray(rec.feedbackComments) ? rec.feedbackComments : [];
         const fallback = getInstructorRemarks(rec);
-        return fallback ? [{ id: `legacy-${getCaseKey(rec)}`, author_name: "Clinical Instructor", comment_text: fallback, created_at: "" }] : [];
+        return fallback ? [{ id: `legacy-${getCaseKey(rec)}`, author_name: rec.instructorName || rec.checkedBy || "Clinical Instructor", comment_text: fallback, created_at: rec.updatedAt || rec.checkedAt || "" }] : [];
       }
 
       function getCommentReadToken(comments) {
@@ -2695,9 +2695,13 @@
 
       async function openInstructorFeedback(rec, archived = false) {
         let comments = [];
+        let commentsLoaded = false;
         if (rec.id && typeof ApiClient.getCaseComments === "function") {
           const result = await ApiClient.getCaseComments(rec.id, archived);
-          if (result?.ok) comments = result.comments || [];
+          if (result?.ok) {
+            comments = result.comments || [];
+            commentsLoaded = true;
+          }
         }
         const feedbackGroups = new Map();
         comments.forEach((comment) => {
@@ -2711,7 +2715,29 @@
           comment.duplicateIds = group.map((item) => item.id).filter(Boolean);
           return comment;
         });
-        if (!archived && !comments.length) comments = getInstructorComments(rec);
+        if (!archived && !commentsLoaded && !comments.length) comments = getInstructorComments(rec);
+        if (comments.some((comment) => String(comment.id).startsWith("legacy-") || !comment.created_at) &&
+            rec.id && typeof ApiClient.getRecordHistory === "function") {
+          try {
+            const result = await ApiClient.getRecordHistory(rec.id);
+            const history = Array.isArray(result?.history) ? result.history : [];
+            comments = comments.map((comment) => {
+              const entry = history.find((item) => {
+                let details = item.details;
+                if (typeof details === "string") {
+                  try { details = JSON.parse(details); } catch (_) { details = {}; }
+                }
+                return normalizeInstructorFeedback(item.remarks || details?.remarks) === comment.comment_text;
+              });
+              return { ...comment,
+                created_at: entry?.created_at || entry?.date_time || comment.created_at,
+                author_name: entry?.actor_name || entry?.author_name || comment.author_name,
+              };
+            });
+          } catch (_) {
+            // Retain saved feedback metadata when history is unavailable.
+          }
+        }
         if (!archived) {
           rec.feedbackComments = comments;
           rec.feedbackCommentsLoaded = true;
@@ -2726,7 +2752,7 @@
             comments,
             archived,
             record: rec,
-            procedure: activeProcedureConfig?.procedureName || "Clinical record",
+            procedure: rec.procedureName || PROCEDURE_CONFIGS[rec.procedureKey]?.procedureName || activeProcedureConfig?.procedureName || "Clinical record",
             caseNo: rec.caseNo || "Unnumbered case",
           },
           buttons: [{ label: "Close", variant: "primary" }],
@@ -2813,7 +2839,8 @@
             const action = document.createElement("button");
             action.type = "button";
             action.className = archived ? "feedback-comment-action restore" : "feedback-comment-action trash";
-            action.title = archived ? "Restore comment" : "Move comment to archive";
+            action.disabled = String(comment.id || "").startsWith("legacy-");
+            action.title = action.disabled ? "This older remark has no saved comment to archive" : archived ? "Restore comment" : "Move comment to archive";
             action.setAttribute("aria-label", action.title);
             action.innerHTML = `<i class="fas ${archived ? "fa-rotate-left" : "fa-trash-can"}" aria-hidden="true"></i>`;
             action.addEventListener("click", async () => {
@@ -2824,7 +2851,7 @@
                 ? ApiClient.restoreCaseComment(commentId)
                 : ApiClient.archiveCaseComment(commentId)));
               if (results.some((result) => !result?.ok)) {
-                showOptionPane({ title: "Unable to Update Comment", message: result?.message || "The comment could not be updated." });
+                showOptionPane({ title: "Unable to Update Comment", message: results.find((result) => !result?.ok)?.message || "The comment could not be updated." });
                 return;
               }
               await openInstructorFeedback(config.record, archived);
@@ -2858,7 +2885,7 @@
                         if (results.some((result) => !result?.ok)) {
                           delete deleteAction.dataset.busy;
                           deleteAction.disabled = false;
-                          showOptionPane({ title: "Unable to Delete Comment", message: result?.message || "The archived comment could not be deleted." });
+                          showOptionPane({ title: "Unable to Delete Comment", message: results.find((result) => !result?.ok)?.message || "The archived comment could not be deleted." });
                           return;
                         }
                         await openInstructorFeedback(config.record, true);
@@ -3706,6 +3733,9 @@
             licenseExpiry: rec.supervisor_license_expiry_date || "",
             teacherRemarks: rec.teacher_remarks || rec.remarks || "",
             checkedBy: rec.checked_by || "",
+            instructorName: rec.instructor_name || "",
+            checkedAt: rec.checked_at || "",
+            updatedAt: rec.updated_at || "",
             status:
               rec.status ||
               rec.record_status ||
