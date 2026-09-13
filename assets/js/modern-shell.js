@@ -410,15 +410,15 @@
     };
     const formatPreviewDateTime = (value) => {
       if (!value) return '-';
-      const date = new Date(value);
+      const date = PhilippineTime.parse(value, true);
       if (Number.isNaN(date.getTime())) return String(value);
-      return `${date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}\n${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+      return `${date.toLocaleDateString('en-US', { timeZone: "Asia/Manila", month: 'short', day: '2-digit', year: 'numeric' })}\n${date.toLocaleTimeString('en-US', { timeZone: "Asia/Manila", hour: 'numeric', minute: '2-digit' })}`;
     };
     const formatPreviewDate = (value) => {
       if (!value || /^0{4}-0{2}-0{2}$/.test(String(value))) return '-';
-      const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+      const date = PhilippineTime.parse(String(value).slice(0, 10), true);
       if (Number.isNaN(date.getTime())) return String(value);
-      return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+      return date.toLocaleDateString('en-US', { timeZone: "Asia/Manila", month: 'short', day: '2-digit', year: 'numeric' });
     };
     const appendPreviewCell = (row, values, numeric = false) => {
       const cell = document.createElement('td');

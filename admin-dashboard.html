@@ -1156,6 +1156,7 @@
 
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=20260912-admin-scope-2"></script>
+    <script src="assets/js/philippine-time.js?v=20260913-1"></script>
     <script src="assets/js/api-client.js?v=20260912-block-identities-1"></script>
     <script>
       (() => {
@@ -1587,7 +1588,7 @@
         entries.forEach((entry) => {
           const tr = document.createElement("tr");
           const timestamp = entry.created_at || entry.timestamp || entry.date_time;
-          tr.innerHTML = `<td>${escapeHtml(timestamp ? new Date(timestamp).toLocaleString() : "Not available")}</td><td><strong>${escapeHtml(activityActionLabel(entry))}</strong></td><td>${escapeHtml(activityDetails(entry))}</td>`;
+          tr.innerHTML = `<td>${escapeHtml(timestamp ? PhilippineTime.parse(timestamp).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "Not available")}</td><td><strong>${escapeHtml(activityActionLabel(entry))}</strong></td><td>${escapeHtml(activityDetails(entry))}</td>`;
           tbody.appendChild(tr);
         });
       }
@@ -1604,7 +1605,7 @@
           <div class="dashboard-activity-item">
             <i class="fas fa-shield-halved" aria-hidden="true"></i>
             <div><strong>${escapeHtml(activityActionLabel(entry))}</strong><small>${escapeHtml(activityDetails(entry))}</small></div>
-            <time>${escapeHtml(entry.created_at || entry.timestamp ? new Date(entry.created_at || entry.timestamp).toLocaleString() : "Not available")}</time>
+            <time>${escapeHtml(entry.created_at || entry.timestamp ? PhilippineTime.parse(entry.created_at || entry.timestamp).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "Not available")}</time>
           </div>
         `).join("");
       }
@@ -1654,7 +1655,7 @@
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `midwife-backup-${new Date().toISOString().slice(0, 10)}.sql`;
+        link.download = `midwife-backup-${PhilippineTime.today()}.sql`;
         link.click();
         URL.revokeObjectURL(url);
         await showMessageDialog("Database backup downloaded successfully.", "Backup Ready");
@@ -1999,7 +2000,7 @@
             : null;
           if (!account) { await showMessageDialog("Instructor account not found.", "Instructor Information"); return; }
           const status = String(account.status || "active").replace(/^./, (letter) => letter.toUpperCase());
-          const created = account.created_at ? new Date(account.created_at).toLocaleString() : "Not available";
+          const created = account.created_at ? PhilippineTime.parse(account.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "Not available";
           const dialog = showOptionPane("", { title: "Instructor Information", confirmLabel: "Done", hideCancel: true });
           optionPaneMessage.innerHTML = `<section class="instructor-info-premium"><div class="instructor-info-avatar"><i class="fas fa-user-tie"></i></div><div><strong>${escapeHtml(account.display_name || "Instructor")}</strong><span>@${escapeHtml(account.username || "not-provided")}</span></div><b class="instructor-info-status ${String(account.status || "active").toLowerCase() === "active" ? "active" : "inactive"}">${escapeHtml(status)}</b><dl><div><dt>Account ID</dt><dd>${escapeHtml(account.id || "Not available")}</dd></div><div><dt>Created</dt><dd>${escapeHtml(created)}</dd></div></dl></section>`;
           await dialog;
@@ -2024,7 +2025,7 @@
           list.forEach((acc, index) => {
             const tr = document.createElement("tr");
             const created = acc.created_at
-              ? new Date(acc.created_at).toLocaleString()
+              ? PhilippineTime.parse(acc.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })
               : "";
             const isActive = String(acc.status || "active").toLowerCase() === "active";
             tr.innerHTML = `
@@ -2967,7 +2968,7 @@
         archived.forEach((student, index) => {
           const tr = document.createElement("tr");
           const archivedDate = student.archived_at
-            ? new Date(student.archived_at).toLocaleDateString()
+            ? PhilippineTime.parse(student.archived_at).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
             : "—";
           tr.innerHTML = `
             <td>${index + 1}</td>
@@ -3470,9 +3471,9 @@
 
       function formatNotificationDate(value) {
         if (!value) return "No timestamp";
-        const parsed = new Date(String(value).replace(" ", "T"));
+        const parsed = PhilippineTime.parse(value);
         if (Number.isNaN(parsed.getTime())) return "No timestamp";
-        return parsed.toLocaleString([], {
+        return parsed.toLocaleString([], { timeZone: "Asia/Manila",
           month: "short",
           day: "numeric",
           year: "numeric",
@@ -4367,22 +4368,22 @@
           : Object.keys(targets);
         const formatSummaryDateTime = (value) => {
           if (!value) return "-";
-          const date = new Date(value);
+          const date = PhilippineTime.parse(value, true);
           if (Number.isNaN(date.getTime())) return String(value);
-          return `${date.toLocaleDateString("en-US", {
+          return `${date.toLocaleDateString("en-US", { timeZone: "Asia/Manila",
             month: "short",
             day: "2-digit",
             year: "numeric",
-          })}\n${date.toLocaleTimeString("en-US", {
+          })}\n${date.toLocaleTimeString("en-US", { timeZone: "Asia/Manila",
             hour: "numeric",
             minute: "2-digit",
           })}`;
         };
         const formatSummaryDate = (value) => {
           if (!value || /^0{4}-0{2}-0{2}$/.test(String(value))) return "-";
-          const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+          const date = PhilippineTime.parse(String(value).slice(0, 10), true);
           if (Number.isNaN(date.getTime())) return String(value);
-          return date.toLocaleDateString("en-US", {
+          return date.toLocaleDateString("en-US", { timeZone: "Asia/Manila",
             month: "short",
             day: "2-digit",
             year: "numeric",
@@ -4814,16 +4815,16 @@
 
       function studentPrcFormatExportDateTime(value) {
         if (!value) return "";
-        const date = new Date(value);
+        const date = PhilippineTime.parse(value, true);
         if (Number.isNaN(date.getTime())) return escapeHtml(String(value));
-        return `${date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}<br>${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+        return `${date.toLocaleDateString("en-US", { timeZone: "Asia/Manila", month: "short", day: "2-digit", year: "numeric" })}<br>${date.toLocaleTimeString("en-US", { timeZone: "Asia/Manila", hour: "numeric", minute: "2-digit" })}`;
       }
 
       function studentPrcFormatExportDate(value) {
         if (!value || /^0{4}-0{2}-0{2}$/.test(String(value))) return "";
-        const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+        const date = PhilippineTime.parse(String(value).slice(0, 10), true);
         if (Number.isNaN(date.getTime())) return String(value);
-        return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+        return date.toLocaleDateString("en-US", { timeZone: "Asia/Manila", month: "short", day: "2-digit", year: "numeric" });
       }
 
       function studentPrcExportCell(...values) {
@@ -5233,9 +5234,9 @@
 
       function studentPrcFormatDocxDateTime(value) {
         if (!value) return "";
-        const date = new Date(value);
+        const date = PhilippineTime.parse(value, true);
         if (Number.isNaN(date.getTime())) return String(value);
-        return `${date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}\n${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+        return `${date.toLocaleDateString("en-US", { timeZone: "Asia/Manila", month: "short", day: "2-digit", year: "numeric" })}\n${date.toLocaleTimeString("en-US", { timeZone: "Asia/Manila", hour: "numeric", minute: "2-digit" })}`;
       }
 
       function studentPrcFormatDocxDate(value) { return studentPrcFormatExportDate(value).replace(/<[^>]+>/g, ""); }
@@ -5501,7 +5502,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `PRC-${draft ? 'DRAFT' : 'VERIFIED'}-${String(studentId).replace(/[^a-z0-9_-]/gi, '_')}-${new Date().toISOString().slice(0, 10)}.docx`;
+            link.download = `PRC-${draft ? 'DRAFT' : 'VERIFIED'}-${String(studentId).replace(/[^a-z0-9_-]/gi, '_')}-${PhilippineTime.today()}.docx`;
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -6519,7 +6520,7 @@
             ? req.caseNumbers.join(", ")
             : req.caseNumbers || "-";
           const createdTs = req.createdAt || req.requestedAt || req.requestedAt;
-          const created = createdTs ? new Date(createdTs).toLocaleString() : "-";
+          const created = createdTs ? PhilippineTime.parse(createdTs).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "-";
           const statusBadge = viewingArchivedEditRequests
             ? '<span class="edit-request-status archived">Archived</span>'
             : req.status === "approved"
@@ -6571,7 +6572,7 @@
         const caseNos = Array.isArray(request.caseNumbers)
           ? request.caseNumbers.join(", ")
           : request.caseNumbers || "N/A";
-        const details = `Student ID: ${request.studentId || "N/A"}\nProcedure Type: ${request.type || "N/A"}\nCase Numbers: ${caseNos}\nStatus: ${request.status || "Pending"}\nCreated: ${request.requestedAt ? new Date(request.requestedAt).toLocaleString() : "N/A"}${request.rejection_remarks ? "\nRejection Remarks: " + request.rejection_remarks : ""}`;
+        const details = `Student ID: ${request.studentId || "N/A"}\nProcedure Type: ${request.type || "N/A"}\nCase Numbers: ${caseNos}\nStatus: ${request.status || "Pending"}\nCreated: ${request.requestedAt ? PhilippineTime.parse(request.requestedAt).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "N/A"}${request.rejection_remarks ? "\nRejection Remarks: " + request.rejection_remarks : ""}`;
         await showMessageDialog(details, "Edit Request Details");
       }
 
@@ -7059,7 +7060,7 @@
         const headers = ["Student ID", "Student", "Procedure", "Patient", "Case No.", "Diagnosis", "Date & Time", "Facility", "Supervisor"];
         const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
         const rows = records.map((record) => [record.student_id, record.student_name, record.procedure_name, record.patient_name, record.case_no, record.complete_diagnosis, record.date_time_performed, record.facility_name, record.supervisor_printed_name].map(csvCell).join(","));
-        downloadBlobFile(`clinical-progress-${new Date().toISOString().slice(0, 10)}.csv`, new Blob(["\ufeff" + [headers.map(csvCell).join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8" }));
+        downloadBlobFile(`clinical-progress-${PhilippineTime.today()}.csv`, new Blob(["\ufeff" + [headers.map(csvCell).join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8" }));
       });
       casesSearchInput?.addEventListener("input", renderProgressOverview);
       casesProcedureFilter?.addEventListener("change", renderCases);
@@ -7236,7 +7237,7 @@
           startAdminDashboard();
         });
     </script>
-    <script src="assets/js/modern-shell.js?v=20260910-restored-after-offline-1"></script>
+    <script src="assets/js/modern-shell.js?v=20260913-philippine-time-1"></script>
     <script src="assets/js/site-protection.js?v=20260903-validation-2"></script>
   </body>
 </html>

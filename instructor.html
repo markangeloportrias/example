@@ -1473,9 +1473,10 @@
 
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
+    <script src="assets/js/philippine-time.js?v=20260913-1"></script>
     <script src="assets/js/api-client.js?v=20260913-remark-dates-1"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=5-compact" />
-    <script src="assets/js/instructor-activity.js?v=3-admin-match"></script>
+    <script src="assets/js/instructor-activity.js?v=20260913-philippine-time-1"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
@@ -2548,7 +2549,7 @@
             record.updated_at ||
             record.created_at ||
             "";
-          const parsed = Date.parse(String(value).replace(" ", "T"));
+          const parsed = PhilippineTime.parse(value, Boolean(record.date_time_performed)).getTime();
           return Number.isNaN(parsed) ? 0 : parsed;
         };
         const recentRecords = [...(Array.isArray(records) ? records : [])].sort(
@@ -2579,17 +2580,17 @@
           <span class="recent-record-primary">${escapeHtml(primary || fallback)}</span>
           ${secondary ? `<small>${escapeHtml(secondary)}</small>` : ""}
         `;
-        const formatLogDateTime = (value) => {
+        const formatLogDateTime = (value, clinical) => {
           const rawValue = String(value || "").trim();
-          const date = new Date(rawValue.replace(" ", "T"));
+          const date = PhilippineTime.parse(rawValue, clinical);
           if (!rawValue || Number.isNaN(date.getTime()))
             return cellWithMeta(rawValue, "");
-          const dateLabel = date.toLocaleDateString("en-PH", {
+          const dateLabel = date.toLocaleDateString("en-PH", { timeZone: "Asia/Manila",
             year: "numeric",
             month: "short",
             day: "numeric",
           });
-          const timeLabel = date.toLocaleTimeString("en-PH", {
+          const timeLabel = date.toLocaleTimeString("en-PH", { timeZone: "Asia/Manila",
             hour: "numeric",
             minute: "2-digit",
           });
@@ -2611,7 +2612,7 @@
           const row = document.createElement("tr");
           row.title = "Open record details";
           row.innerHTML = `
-            <td>${formatLogDateTime(logDate)}</td>
+            <td>${formatLogDateTime(logDate, Boolean(record.date_time_performed))}</td>
             <td>${cellWithMeta(record.student_name, record.student_id ? `ID: ${record.student_id}` : "")}</td>
             <td>${escapeHtml(record.procedure_name || "Clinical procedure")}</td>
             <td>${escapeHtml(record.case_no || "—")}</td>
@@ -2706,9 +2707,9 @@
 
       function formatChatTime(value) {
         if (!value) return "";
-        const date = new Date(value);
+        const date = PhilippineTime.parse(value);
         if (Number.isNaN(date.getTime())) return "";
-        return date.toLocaleString([], {
+        return date.toLocaleString([], { timeZone: "Asia/Manila",
           month: "short",
           day: "numeric",
           hour: "numeric",
@@ -2917,7 +2918,7 @@
           const student = studentResult.ok ? studentResult.student : {};
           const studentName = student.student_name || "Unknown Student";
           const when = req.requestedAt
-            ? new Date(req.requestedAt).toLocaleDateString()
+            ? PhilippineTime.parse(req.requestedAt).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
             : "Unknown";
           const formType = displayType[req.type] || req.type || "Unknown";
 
@@ -3040,7 +3041,7 @@
           const studentName = student.student_name || "Unknown Student";
           const studentId = student.student_id || req.studentId || "N/A";
           const when = req.requestedAt
-            ? new Date(req.requestedAt).toLocaleDateString()
+            ? PhilippineTime.parse(req.requestedAt).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
             : "Unknown";
           const formType = displayType[req.type] || req.type || "Unknown";
 
@@ -3743,7 +3744,7 @@
         });
         const link = document.createElement("a");
         const now = new Date();
-        const dateTag = now.toISOString().slice(0, 10);
+        const dateTag = PhilippineTime.today();
         const sectionTag = procedureName
           ? procedureName.toLowerCase().replace(/\s+/g, "-")
           : "all-records";
@@ -4062,16 +4063,16 @@
 
       function studentPrcFormatExportDateTime(value) {
         if (!value) return "";
-        const date = new Date(value);
+        const date = PhilippineTime.parse(value, true);
         if (Number.isNaN(date.getTime())) return escapeHtml(String(value));
-        return `${date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}<br>${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+        return `${date.toLocaleDateString("en-US", { timeZone: "Asia/Manila", month: "short", day: "2-digit", year: "numeric" })}<br>${date.toLocaleTimeString("en-US", { timeZone: "Asia/Manila", hour: "numeric", minute: "2-digit" })}`;
       }
 
       function studentPrcFormatExportDate(value) {
         if (!value || /^0{4}-0{2}-0{2}$/.test(String(value))) return "";
-        const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+        const date = PhilippineTime.parse(String(value).slice(0, 10), true);
         if (Number.isNaN(date.getTime())) return String(value);
-        return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+        return date.toLocaleDateString("en-US", { timeZone: "Asia/Manila", month: "short", day: "2-digit", year: "numeric" });
       }
 
       function studentPrcExportCell(...values) {
@@ -4481,9 +4482,9 @@
 
       function studentPrcFormatDocxDateTime(value) {
         if (!value) return "";
-        const date = new Date(value);
+        const date = PhilippineTime.parse(value, true);
         if (Number.isNaN(date.getTime())) return String(value);
-        return `${date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}\n${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+        return `${date.toLocaleDateString("en-US", { timeZone: "Asia/Manila", month: "short", day: "2-digit", year: "numeric" })}\n${date.toLocaleTimeString("en-US", { timeZone: "Asia/Manila", hour: "numeric", minute: "2-digit" })}`;
       }
 
       function studentPrcFormatDocxDate(value) { return studentPrcFormatExportDate(value).replace(/<[^>]+>/g, ""); }
@@ -4755,7 +4756,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `PRC-${draft ? 'DRAFT' : 'VERIFIED'}-${String(studentId).replace(/[^a-z0-9_-]/gi, '_')}-${new Date().toISOString().slice(0, 10)}.docx`;
+            link.download = `PRC-${draft ? 'DRAFT' : 'VERIFIED'}-${String(studentId).replace(/[^a-z0-9_-]/gi, '_')}-${PhilippineTime.today()}.docx`;
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -4856,19 +4857,19 @@
 
           const formatSummaryDateTime = (value) => {
             if (!value) return "-";
-            const date = new Date(value);
+            const date = PhilippineTime.parse(value, true);
             if (Number.isNaN(date.getTime())) return String(value);
-            return `${date.toLocaleDateString("en-US", {
+            return `${date.toLocaleDateString("en-US", { timeZone: "Asia/Manila",
               month: "short", day: "2-digit", year: "numeric",
-            })}\n${date.toLocaleTimeString("en-US", {
+            })}\n${date.toLocaleTimeString("en-US", { timeZone: "Asia/Manila",
               hour: "numeric", minute: "2-digit",
             })}`;
           };
           const formatSummaryDate = (value) => {
             if (!value || /^0{4}-0{2}-0{2}$/.test(String(value))) return "-";
-            const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+            const date = PhilippineTime.parse(String(value).slice(0, 10), true);
             if (Number.isNaN(date.getTime())) return String(value);
-            return date.toLocaleDateString("en-US", {
+            return date.toLocaleDateString("en-US", { timeZone: "Asia/Manila",
               month: "short", day: "2-digit", year: "numeric",
             });
           };
@@ -6732,10 +6733,10 @@
       function formatAuditDate(value) {
         if (!value) return "Date unavailable";
         const raw = String(value).trim();
-        const date = new Date(raw.includes(" ") && !raw.includes("T") ? raw.replace(" ", "T") : raw);
+        const date = PhilippineTime.parse(raw);
         return Number.isNaN(date.getTime())
           ? raw
-          : date.toLocaleString([], {
+          : date.toLocaleString([], { timeZone: "Asia/Manila",
               month: "short",
               day: "numeric",
               year: "numeric",
@@ -6915,11 +6916,7 @@
           if (recordInstructor && !/^ins_[a-z0-9_-]+$/i.test(recordInstructor)) return recordInstructor;
           return "Clinical Instructor";
         };
-        const remarkDate = (value) => {
-          const raw = String(value || "").trim().replace(" ", "T");
-          // Database timestamps are UTC; preserve explicit offsets on ISO dates.
-          return new Date(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(raw) ? `${raw}Z` : raw);
-        };
+        const remarkDate = (value) => PhilippineTime.parse(value);
         const formatDate = (value) => {
           if (!value) return "Date unavailable";
           const raw = String(value).trim();
@@ -7093,7 +7090,7 @@
         archived.forEach((student, index) => {
           const tr = document.createElement("tr");
           const archivedDate = student.archived_at
-            ? new Date(student.archived_at).toLocaleDateString()
+            ? PhilippineTime.parse(student.archived_at).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
             : "—";
           tr.innerHTML = `
             <td>${index + 1}</td>
@@ -7929,7 +7926,7 @@
         window.__updateEmptyTables = updateEmptyTables;
       })();
     </script>
-    <script src="assets/js/modern-shell.js?v=20260910-restored-after-offline-1"></script>
+    <script src="assets/js/modern-shell.js?v=20260913-philippine-time-1"></script>
     <script src="assets/js/site-protection.js?v=20260903-validation-2"></script>
   </body>
 </html>

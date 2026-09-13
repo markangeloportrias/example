@@ -49,8 +49,8 @@
     var count = 0;
     rows.forEach(function (entry) {
       var rawDate = entry.created_at || entry.timestamp;
-      var date = rawDate ? new Date(String(rawDate).replace(' ', 'T')) : null;
-      var values = [date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : rawDate || 'Not available',
+      var date = rawDate ? PhilippineTime.parse(rawDate) : null;
+      var values = [date && !Number.isNaN(date.getTime()) ? date.toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : rawDate || 'Not available',
         activityActionLabel(entry), activityDetails(entry)];
       if (term && !values.join(' ').toLowerCase().includes(term)) return;
       var row = document.createElement('tr');
