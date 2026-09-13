@@ -1473,7 +1473,7 @@
 
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
-    <script src="assets/js/api-client.js?v=20260911-chat-identity-1"></script>
+    <script src="assets/js/api-client.js?v=20260913-remark-dates-1"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=5-compact" />
     <script src="assets/js/instructor-activity.js?v=3-admin-match"></script>
     <script>
@@ -6935,14 +6935,32 @@
           return Number.isNaN(date.getTime()) ? 0 : date.getTime();
         };
         const timeline = [];
+        let remarkHistory = [];
+        if ((!comments.length || comments.some((comment) => !comment.created_at)) &&
+            record.id && typeof ApiClient !== "undefined" && typeof ApiClient.getRecordHistory === "function") {
+          try {
+            const result = await ApiClient.getRecordHistory(record.id);
+            remarkHistory = Array.isArray(result?.history) ? result.history : [];
+          } catch (error) {
+            // Keep the saved record date available if history cannot be loaded.
+          }
+        }
+        const savedRemarkDate = (text) => {
+          const entry = remarkHistory.find((item) => {
+            const body = cleanRecordHistoryValue(item.remarks || item.details);
+            return body === text && (item.created_at || item.date_time || item.updated_at);
+          });
+          return entry?.created_at || entry?.date_time || entry?.updated_at || "";
+        };
 
         comments.forEach((comment) => {
           const text = String(comment?.comment_text || "").trim();
           if (!text) return;
+          const commentDate = comment.created_at || savedRemarkDate(text);
           timeline.push({
             kind: "remark",
-            date: comment.created_at,
-            formattedDate: formatDate(comment.created_at),
+            date: commentDate,
+            formattedDate: formatDate(commentDate),
             author: resolveInstructorName(comment),
             body: text,
           });
@@ -6951,7 +6969,7 @@
         if (!comments.length) {
           const legacyRemark = String(record.remarks || record.teacher_remarks || "").trim();
           if (legacyRemark && !/^(?:n\/?a|none|null|undefined|no\s+remarks?|not\s+available|-)$/i.test(legacyRemark)) {
-            const legacyDate = record.updated_at || record.checked_at || record.created_at;
+            const legacyDate = savedRemarkDate(legacyRemark) || record.updated_at || record.checked_at || record.created_at;
             timeline.push({
               kind: "remark",
               date: legacyDate,
