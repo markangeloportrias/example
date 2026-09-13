@@ -6915,13 +6915,19 @@
           if (recordInstructor && !/^ins_[a-z0-9_-]+$/i.test(recordInstructor)) return recordInstructor;
           return "Clinical Instructor";
         };
+        const remarkDate = (value) => {
+          const raw = String(value || "").trim().replace(" ", "T");
+          // Database timestamps are UTC; preserve explicit offsets on ISO dates.
+          return new Date(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(raw) ? `${raw}Z` : raw);
+        };
         const formatDate = (value) => {
           if (!value) return "Date unavailable";
           const raw = String(value).trim();
-          const date = new Date(raw.includes(" ") && !raw.includes("T") ? raw.replace(" ", "T") : raw);
+          const date = remarkDate(value);
           return Number.isNaN(date.getTime())
             ? raw
-            : date.toLocaleString([], {
+            : date.toLocaleString("en-PH", {
+                timeZone: "Asia/Manila",
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -6930,8 +6936,7 @@
               });
         };
         const parseDate = (value) => {
-          const raw = String(value || "").trim();
-          const date = new Date(raw.includes(" ") && !raw.includes("T") ? raw.replace(" ", "T") : raw);
+          const date = remarkDate(value);
           return Number.isNaN(date.getTime()) ? 0 : date.getTime();
         };
         const timeline = [];
