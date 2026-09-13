@@ -701,6 +701,8 @@
       teacher_remarks: caseRec.teacher_remarks || '',
       checked_by: caseRec.checked_by || '',
       checked_at: caseRec.checked_at || '',
+      created_at: caseRec.created_at || '',
+      updated_at: caseRec.updated_at || '',
       status: legacyRecordStatus(caseRec),
       submitted_at: caseRec.submitted_at || caseRec.created_at || ''
     };
@@ -2342,6 +2344,8 @@
       teacher_remarks: record.teacher_remarks || '',
       checked_by: record.checked_by || '',
       checked_at: record.checked_at || '',
+      created_at: record.created_at || '',
+      updated_at: record.updated_at || '',
       status: status,
       submitted_at: record.created_at || record.submitted_at || ''
     };
