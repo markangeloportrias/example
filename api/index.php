@@ -180,7 +180,7 @@ function caseRoleConflictPayload(array $context): array
         'role' => $context['role'],
         'role_label' => $roleLabel,
         'case_no' => $context['case_no'],
-        'message' => "The {$roleLabel} role is already assigned to another groupmate for this patient.",
+        'message' => 'Another student is already assigned for this patient.',
     ];
 }
 

@@ -2464,7 +2464,7 @@
         }
         if (!result.available) {
           setCaseRoleAvailability(
-            result.message || `The ${roleLabel} role is already assigned to another groupmate for this case number.`,
+            result.message || "Another student is already assigned for this patient.",
             "unavailable",
           );
           setCaseRoleSaveEnabled(false);
