@@ -2471,12 +2471,7 @@
           return;
         }
 
-        setCaseRoleAvailability(
-          result.owned_by_current_student
-            ? `You are already assigned as ${roleLabel} for ${patientName} (case number ${caseNo}).`
-            : `${roleLabel} is available for ${patientName} (case number ${caseNo}).`,
-          "available",
-        );
+        setCaseRoleAvailability("", "");
         setCaseRoleSaveEnabled(true);
       }
 
