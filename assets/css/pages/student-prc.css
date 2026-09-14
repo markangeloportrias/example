@@ -161,6 +161,11 @@ table.prc-procedure-table td.record-status-cell.status-needs_revision { backgrou
 table.prc-procedure-table td.record-status-cell.status-reviewed { background: #fffbeb !important; }
 table.prc-procedure-table td.record-status-cell.status-submitted { background: #eff6ff !important; }
 
+html body.role-student #recordProcedureTables .procedure-records-table tbody td.record-detail-cell,
+html body.role-student #recordProcedureTables .procedure-records-table tbody td.record-detail-cell > :is(.record-detail-primary, .record-detail-secondary) {
+  color: #000 !important;
+}
+
 html body.role-student table.prc-procedure-table tbody td:last-child .case-actions {
   display: flex !important;
   justify-content: center !important;
