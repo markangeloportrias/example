@@ -1245,7 +1245,8 @@ html body.role-instructor .prc-source-table .record-detail-cell > .record-detail
 
 /* Annual Records button palette. */
 html body.role-instructor #yearly-report-view #yearlyInstructorBackBtn {
-  translate: 0 -3mm;
+  translate: 0 -3mm !important;
+  transform: none !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1270,7 +1271,7 @@ html body.role-instructor #yearly-report-view #yearlyInstructorBackBtn:hover {
   background: #00509d !important;
   color: #ffffff !important;
   box-shadow: 0 8px 18px rgba(0, 80, 157, 0.2) !important;
-  transform: translateY(-1px) !important;
+  transform: none !important;
 }
 html body.role-instructor #yearly-report-view #yearlyInstructorBackBtn:focus-visible {
   outline: 3px solid rgba(0, 80, 157, 0.22) !important;
