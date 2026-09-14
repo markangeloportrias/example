@@ -7120,7 +7120,7 @@
             <td>${escapeHtml(student.parent_contact || "")}</td>
             <td>${escapeHtml(student.contact_number || "")}</td>
             <td>${archivedDate}</td>
-            <td><button class="mini-btn" type="button" data-instructor-restore-student="${escapeHtml(student.student_id || "")}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restore</button><button class="mini-btn danger" type="button" data-instructor-delete-archived-student="${escapeHtml(student.student_id || "")}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button></td>
+            <td><button class="mini-btn" type="button" data-instructor-restore-student="${escapeHtml(student.student_id || "")}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restore</button></td>
           `;
           instructorArchivedStudentsTbody.appendChild(tr);
         });
