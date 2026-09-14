@@ -564,11 +564,6 @@ try {
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'delete') {
             if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
-            $activeCaseStmt = $pdo->prepare('SELECT COUNT(*) FROM case_records WHERE student_id=? AND archived_at IS NULL');
-            $activeCaseStmt->execute([$id]);
-            if ((int)$activeCaseStmt->fetchColumn() > 0) {
-                respond(['ok'=>false,'message'=>'Archive all active clinical records for this student before permanently deleting the account.'],409);
-            }
             $studentStmt = $pdo->prepare('SELECT student_id FROM students WHERE student_id=? AND archived_at IS NOT NULL');
             $studentStmt->execute([$id]);
             if (!$studentStmt->fetchColumn()) respond(['ok'=>false,'message'=>'Archived student not found.'],404);
@@ -576,7 +571,7 @@ try {
             try {
                 $pdo->prepare('DELETE FROM notification_history WHERE student_id=? OR request_id IN (SELECT id FROM edit_requests WHERE student_id=?)')->execute([$id, $id]);
                 $pdo->prepare('DELETE FROM case_comments WHERE case_id IN (SELECT id FROM case_records WHERE student_id=?)')->execute([$id]);
-                $pdo->prepare('DELETE FROM case_records WHERE student_id=? AND archived_at IS NOT NULL')->execute([$id]);
+                $pdo->prepare('DELETE FROM case_records WHERE student_id=?')->execute([$id]);
                 $pdo->prepare('DELETE FROM edit_permissions WHERE student_id=?')->execute([$id]);
                 $pdo->prepare('DELETE FROM edit_requests WHERE student_id=?')->execute([$id]);
                 $pdo->prepare('DELETE FROM chat_messages WHERE student_id=?')->execute([$id]);
