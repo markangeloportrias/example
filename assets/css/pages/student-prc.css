@@ -87,6 +87,16 @@ html body.role-student #summaryTabSection table.prc-procedure-table tbody td :wh
   line-height: 1.2 !important;
 }
 
+html body.role-student table.prc-procedure-table tbody td.record-detail-cell > :is(.record-detail-primary, .record-detail-secondary),
+html body.role-student #deliveryAssistedWorkspace table.prc-procedure-table tbody td.record-detail-cell > :is(.record-detail-primary, .record-detail-secondary),
+html body.role-student #summaryTabSection table.prc-procedure-table tbody td.record-detail-cell > :is(.record-detail-primary, .record-detail-secondary) {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+}
+
 html body.role-student table.prc-procedure-table tbody tr:hover td { background: #fff !important; }
 
 /* Override the dashboard palette's alternating borders so the PRC grid is continuous. */
