@@ -1245,6 +1245,7 @@ html body.role-instructor .prc-source-table .record-detail-cell > .record-detail
 
 /* Annual Records button palette. */
 html body.role-instructor #yearly-report-view #yearlyInstructorBackBtn {
+  translate: 0 -1.5mm;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
