@@ -2874,10 +2874,23 @@
           rec.case_no || "",
         );
         if (draft === null) return;
+        const procedureKey = rec.procedure_key || String(
+          rec.procedure_name || displayType[normalizeProcedureKey(rec.procedure_name)] || "",
+        ).trim().toLowerCase();
+        const recordIdentity = rec.record_identity || rec.recordIdentity || {
+          student_id: rec.student_id,
+          procedure_key: procedureKey,
+          case_no: rec.case_no,
+          patient_name: rec.patient_name,
+          academic_year: rec.academic_year || rec.school_year || "",
+        };
+        const rawCaseId = rec.id ?? rec.case_id ?? rec.caseId ?? rec.case_record_id;
+        const caseId = /^\d+$/.test(String(rawCaseId ?? "")) && Number(rawCaseId) > 0 ? rawCaseId : "resolve";
         const result = await ApiClient.addCaseComment(
-          rec.id,
+          caseId,
           draft,
           currentInstructorName,
+          recordIdentity,
         );
         if (!result || !result.ok) {
           showOptionMessage(

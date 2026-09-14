@@ -1025,6 +1025,7 @@ try {
                 $pdo->rollBack();
                 respond(['ok' => false, 'message' => 'Clinical record not found or already archived.'], 404);
             }
+            $reviewRemarks = trim((string)($data['remarks'] ?? ''));
             if ($status === 'verified') {
                 $missing = missingClinicalFields($reviewRecord);
                 if ($missing) {
@@ -1041,6 +1042,15 @@ try {
             $reviewStep = 'update';
             $stmt = $pdo->prepare("UPDATE case_records SET record_status=?,teacher_remarks=?,checked_by=?,checked_at=$checkedAtSql,instructor_uid=COALESCE(?,instructor_uid),instructor_name=COALESCE(?,instructor_name) WHERE $reviewWhere LIMIT 1");
             $stmt->execute(array_merge([$status, $data['remarks'] ?? null, $checkedBy, $instructorId, $instructorName], $reviewParams));
+            if ($reviewRemarks !== '') {
+                $commentExists = $pdo->prepare('SELECT id FROM case_comments WHERE case_id=? AND comment_text=? AND archived_at IS NULL LIMIT 1');
+                $commentExists->execute([(string)$reviewRecord['id'], $reviewRemarks]);
+                if (!$commentExists->fetchColumn()) {
+                    $commentAuthor = trim((string)($instructorName ?? '')) ?: trim((string)($reviewRecord['instructor_name'] ?? '')) ?: 'Clinical Instructor';
+                    $commentStmt = $pdo->prepare('INSERT INTO case_comments (case_id,author_uid,author_name,author_role,comment_text) VALUES (?,?,?,?,?)');
+                    $commentStmt->execute([(string)$reviewRecord['id'], $user['user_uid'], $commentAuthor, $user['role'] === 'admin' ? 'admin' : 'instructor', $reviewRemarks]);
+                }
+            }
             $reviewStep = 'audit';
             audit($pdo, $user, 'review', 'case', $id, ['status' => $requested, 'remarks' => $data['remarks'] ?? null]);
             $reviewStep = 'commit';
@@ -1123,7 +1133,18 @@ try {
             if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok' => false, 'message' => 'Access denied.'], 403);
             $remarks = trim((string)($data['remarks'] ?? ''));
             if ($remarks === '') respond(['ok' => false, 'message' => 'A comment is required.'], 422);
-            $caseStmt=$pdo->prepare('SELECT instructor_name FROM case_records WHERE id=? AND archived_at IS NULL');$caseStmt->execute([$id]);$case=$caseStmt->fetch();
+            $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
+            if ($id === 'resolve') {
+                if ($identity === []) respond(['ok' => false, 'message' => 'Record identity is required.'], 422);
+                [$commentWhere, $commentParams] = caseMutationSelection($id, $identity);
+                $caseStmt = $pdo->prepare("SELECT id,instructor_name FROM case_records WHERE $commentWhere LIMIT 2");
+                $caseStmt->execute($commentParams);
+                $matches = $caseStmt->fetchAll();
+                if (count($matches) > 1) respond(['ok' => false, 'message' => 'Multiple records match this selection. No comment was saved.'], 409);
+                $case = $matches[0] ?? false;
+            } else {
+                $caseStmt=$pdo->prepare('SELECT id,instructor_name FROM case_records WHERE id=? AND archived_at IS NULL');$caseStmt->execute([$id]);$case=$caseStmt->fetch();
+            }
             if (!$case) respond(['ok'=>false,'message'=>'Case not found.'],404);
             $authorName=trim((string)($data['checked_by'] ?? '')) ?: ($case['instructor_name'] ?: 'Clinical Instructor');
             $pdo->beginTransaction();

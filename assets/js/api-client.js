@@ -2998,8 +2998,12 @@
     messages.forEach(function(m){if(!threads[m.student_id])threads[m.student_id]={student_id:m.student_id,student_name:m.student_name||m.student_id,last_message:'',last_message_at:'',unread_count:0};var t=threads[m.student_id];t.last_message=m.message;t.last_message_at=m.created_at;if(m.sender_role==='student'&&!Number(m.read_by_instructor))t.unread_count+=1;});
     return Object.keys(threads).map(function(k){return threads[k];}).sort(function(a,b){return new Date(b.last_message_at)-new Date(a.last_message_at);});
   };
-  ApiClient.addCaseComment = async function (caseId, remarks, checkedBy) {
-    try { return await mysqlRequest('cases/' + encodeURIComponent(caseId) + '/comment', { method: 'PATCH', body: JSON.stringify({ remarks: remarks || '', checked_by: checkedBy || 'Administrator' }) }); }
+  ApiClient.addCaseComment = async function (caseId, remarks, checkedBy, recordIdentity) {
+    try {
+      var payload = { remarks: remarks || '', checked_by: checkedBy || 'Administrator' };
+      if (recordIdentity && typeof recordIdentity === 'object') payload.record_identity = recordIdentity;
+      return await mysqlRequest('cases/' + encodeURIComponent(caseId) + '/comment', { method: 'PATCH', body: JSON.stringify(payload) });
+    }
     catch (error) { return { ok: false, message: error.message }; }
   };
   ApiClient.getCaseComments = async function (caseId, archived) {
