@@ -4046,6 +4046,12 @@ html body.role-student table.prc-procedure-table tbody td :where(span, small, di
   font-weight: 400 !important;
   line-height: 1.2 !important;
 }
+html body.role-student table.prc-procedure-table tbody td.record-detail-cell,
+html body.role-student table.prc-procedure-table tbody td.record-detail-cell :where(span, small, div) {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+}
 html body.role-student table.prc-procedure-table tbody tr:hover td { background: #fff !important; }
 html body.role-student table.prc-procedure-table .case-action-btn {
   border: 1px solid #000 !important;
