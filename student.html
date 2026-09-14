@@ -3211,7 +3211,33 @@
         }) || null;
       }
 
-      function validateDeliveryFormInputs(inputs) {
+      function validateDeliveryFormInputs(inputs, requireCompleteRecord = false) {
+        if (requireCompleteRecord) {
+          const missingFields = [
+            ["Patient Name", inputs.patientName],
+            ["Patient Address", inputs.patientAddress],
+            ["Case Number", inputs.caseNo],
+            ["Date and Time Performed", inputs.dateTime],
+            ["Complete Diagnosis", inputs.diagnosis],
+            ["Facility Name", inputs.facilityName],
+            ["Facility Address", inputs.facilityAddress],
+            ["Facility Contact", inputs.facilityContact],
+            ["Supervisor Name", inputs.supervisorName],
+            ["Supervisor Contact", inputs.supervisorContact],
+            ["Position / Designation", inputs.supervisorPosition],
+            ["License Number", inputs.licenseNo],
+            ["License Expiry Date", inputs.licenseExpiry],
+          ]
+            .filter(([, value]) => !String(value || "").trim())
+            .map(([label]) => label);
+          if (missingFields.length) {
+            showOptionPane({
+              title: "Missing Fields",
+              message: `Complete the following fields before adding the record: ${missingFields.join(", ")}.`,
+            });
+            return false;
+          }
+        }
         const invalidContact = [
           ["Facility Contact", inputs.facilityContact],
           ["Supervisor Contact", inputs.supervisorContact],
@@ -5490,7 +5516,7 @@
         .getElementById("addRecordBtn")
         ?.addEventListener("click", async () => {
           const inputs = getDeliveryFormInputs();
-          if (!validateDeliveryFormInputs(inputs)) {
+          if (!validateDeliveryFormInputs(inputs, !deliveryEditingRecord)) {
             return;
           }
 

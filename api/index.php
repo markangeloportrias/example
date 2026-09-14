@@ -1071,6 +1071,8 @@ try {
         }
         if ($method === 'POST') {
             requireFields($data, ['student_id', 'procedure_key', 'case_no', 'patient_name']);
+            $missing = missingClinicalFields($data);
+            if ($missing) respond(['ok' => false, 'message' => 'Complete the following fields before adding the record: ' . implode(', ', $missing) . '.', 'missing_fields' => $missing], 422);
             if ($user['role'] === 'student' && $user['user_uid'] !== (string)$data['student_id']) respond(['ok' => false, 'message' => 'Access denied.'], 403);
             // Students may not add more records once the verified requirement is met.
             // Keep this server-side so the limit cannot be bypassed by calling the API directly.
