@@ -3006,9 +3006,11 @@
     }
     catch (error) { return { ok: false, message: error.message }; }
   };
-  ApiClient.getCaseComments = async function (caseId, archived) {
+  ApiClient.getCaseComments = async function (caseId, archived, recordIdentity) {
     try {
-      var result = await mysqlRequest('case-comments?case_id=' + encodeURIComponent(caseId) + '&archived=' + (archived ? '1' : '0'));
+      var query = 'case-comments?case_id=' + encodeURIComponent(caseId) + '&archived=' + (archived ? '1' : '0');
+      if (recordIdentity && typeof recordIdentity === 'object') query += '&record_identity=' + encodeURIComponent(JSON.stringify(recordIdentity));
+      var result = await mysqlRequest(query);
       return { ok: true, comments: result.comments || [] };
     } catch (error) { return { ok: false, comments: [], message: error.message }; }
   };

@@ -6897,7 +6897,7 @@
 
         const commentsPromise =
           record.id && typeof ApiClient !== "undefined" && typeof ApiClient.getCaseComments === "function"
-            ? ApiClient.getCaseComments(record.id, false)
+            ? ApiClient.getCaseComments(record.id, false, record.record_identity)
             : Promise.resolve({ ok: true, comments: [] });
         const instructorsPromise =
           typeof ApiClient !== "undefined" && typeof ApiClient.getInstructorAccounts === "function"

@@ -771,14 +771,31 @@ try {
         $caseId = trim((string)($_GET['case_id'] ?? ''));
         if ($method === 'GET') {
             if ($caseId === '') respond(['ok' => false, 'message' => 'case_id is required.'], 422);
-            $caseStmt = $pdo->prepare('SELECT id,student_id,instructor_uid,instructor_name,procedure_key,case_no,teacher_remarks FROM case_records WHERE id=?');
-            $caseStmt->execute([$caseId]); $case = $caseStmt->fetch();
+            $identity = [];
+            $identityJson = trim((string)($_GET['record_identity'] ?? ''));
+            if ($identityJson !== '') {
+                $decodedIdentity = json_decode($identityJson, true);
+                if (is_array($decodedIdentity)) $identity = $decodedIdentity;
+            }
+            if ($identity !== []) {
+                [$commentWhere, $commentParams] = caseMutationSelection('resolve', $identity);
+                $caseStmt = $pdo->prepare("SELECT id,student_id,instructor_uid,instructor_name,procedure_key,case_no,teacher_remarks FROM case_records WHERE $commentWhere LIMIT 2");
+                $caseStmt->execute($commentParams);
+                $matches = $caseStmt->fetchAll();
+                if (count($matches) > 1) respond(['ok' => false, 'message' => 'Multiple records match this selection.'], 409);
+                $case = $matches[0] ?? false;
+            } else {
+                $caseStmt = $pdo->prepare('SELECT id,student_id,instructor_uid,instructor_name,procedure_key,case_no,teacher_remarks FROM case_records WHERE id=?');
+                $caseStmt->execute([$caseId]); $case = $caseStmt->fetch();
+            }
             if (!$case) respond(['ok' => false, 'message' => 'Case not found.'], 404);
             if ($user['role'] === 'student' && $user['user_uid'] !== $case['student_id']) respond(['ok' => false, 'message' => 'Access denied.'], 403);
 
+            $caseId = (string)$case['id'];
             $legacy = trim((string)($case['teacher_remarks'] ?? ''));
-            $commentCountStmt=$pdo->prepare('SELECT COUNT(*) FROM case_comments WHERE case_id=?');$commentCountStmt->execute([$caseId]);$hasComments=(int)$commentCountStmt->fetchColumn()>0;
-            if (!$hasComments && $legacy !== '' && !preg_match('/^(none|n\/?a|not applicable|null|undefined|-)$/i', $legacy)) {
+            $legacyExistsStmt = $pdo->prepare('SELECT id FROM case_comments WHERE case_id=? AND comment_text=? LIMIT 1');
+            $legacyExistsStmt->execute([$caseId, $legacy]);
+            if (!$legacyExistsStmt->fetchColumn() && $legacy !== '' && !preg_match('/^(none|n\/?a|not applicable|null|undefined|-)$/i', $legacy)) {
                 $legacyStmt = $pdo->prepare("INSERT IGNORE INTO case_comments (case_id,author_uid,author_name,author_role,comment_text,source_key) VALUES (?,?,?,?,?,?)");
                 $legacyStmt->execute([$caseId,$case['instructor_uid'] ?: null,$case['instructor_name'] ?: 'Clinical Instructor','instructor',$legacy,'legacy-case:'.$caseId]);
             }
@@ -1134,9 +1151,9 @@ try {
             $remarks = trim((string)($data['remarks'] ?? ''));
             if ($remarks === '') respond(['ok' => false, 'message' => 'A comment is required.'], 422);
             $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
-            if ($id === 'resolve') {
+            if ($identity !== [] || $id === 'resolve') {
                 if ($identity === []) respond(['ok' => false, 'message' => 'Record identity is required.'], 422);
-                [$commentWhere, $commentParams] = caseMutationSelection($id, $identity);
+                [$commentWhere, $commentParams] = caseMutationSelection('resolve', $identity);
                 $caseStmt = $pdo->prepare("SELECT id,instructor_name FROM case_records WHERE $commentWhere LIMIT 2");
                 $caseStmt->execute($commentParams);
                 $matches = $caseStmt->fetchAll();
@@ -1146,6 +1163,7 @@ try {
                 $caseStmt=$pdo->prepare('SELECT id,instructor_name FROM case_records WHERE id=? AND archived_at IS NULL');$caseStmt->execute([$id]);$case=$caseStmt->fetch();
             }
             if (!$case) respond(['ok'=>false,'message'=>'Case not found.'],404);
+            $id = (string)$case['id'];
             $authorName=trim((string)($data['checked_by'] ?? '')) ?: ($case['instructor_name'] ?: 'Clinical Instructor');
             $pdo->beginTransaction();
             $stmt=$pdo->prepare('INSERT INTO case_comments (case_id,author_uid,author_name,author_role,comment_text) VALUES (?,?,?,?,?)');

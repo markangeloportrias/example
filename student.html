@@ -2673,7 +2673,7 @@
       async function hydrateCaseComments() {
         await Promise.all(deliveryRecords.map(async (record) => {
           if (!record.id || typeof ApiClient.getCaseComments !== "function") return;
-          const result = await ApiClient.getCaseComments(record.id, false);
+          const result = await ApiClient.getCaseComments(record.id, false, record.recordIdentity);
           if (result?.ok) {
             record.feedbackComments = result.comments || [];
             record.feedbackCommentsLoaded = true;
@@ -2685,7 +2685,7 @@
         let comments = [];
         let commentsLoaded = false;
         if (rec.id && typeof ApiClient.getCaseComments === "function") {
-          const result = await ApiClient.getCaseComments(rec.id, archived);
+          const result = await ApiClient.getCaseComments(rec.id, archived, rec.recordIdentity);
           if (result?.ok) {
             comments = result.comments || [];
             commentsLoaded = true;
