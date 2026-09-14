@@ -2978,7 +2978,7 @@
             <td>${student.parent_contact || ""}</td>
             <td>${student.contact_number || ""}</td>
             <td>${archivedDate}</td>
-            <td><button class="mini-btn" type="button" data-restore-student="${student.student_id || ""}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restore</button></td>
+            <td><button class="mini-btn" type="button" data-restore-student="${student.student_id || ""}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restore</button><button class="mini-btn danger" type="button" data-delete-archived-student="${student.student_id || ""}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button></td>
           `;
           archivedStudentsTbody.appendChild(tr);
         });
