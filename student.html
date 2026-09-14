@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="assets/css/components/hero.css?v=20260728-12" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
     <link rel="stylesheet" href="assets/css/pages/student-palette.css?v=20260824-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20260914-black-body-1" />
+    <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20260914-summary-table-1" />
     <link rel="stylesheet" href="assets/css/components/role-table-density.css?v=20260821-1" />
     <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260906-internal-header-1" />
     <link rel="stylesheet" href="assets/css/components/mobile-access-block.css?v=20260908-1" />
@@ -4839,7 +4839,7 @@
           const table = document.createElement("table");
           table.className = "clinical-form-table procedure-records-table prc-procedure-table";
           table.style.minWidth = "1180px";
-          table.innerHTML = `<colgroup><col style="width:20.83%"><col style="width:5.48%"><col style="width:14.01%"><col style="width:7.92%"><col style="width:18.27%"><col style="width:14.01%"><col style="width:9.74%"><col style="width:9.74%"></colgroup><thead><tr><th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case No.</th><th rowspan="2">${getPrcDiagnosisHeader(key)}</th><th rowspan="2">Date &amp; Time<br>Performed</th><th rowspan="2">Full Name, Address of Facility &amp;<br>Contact Number</th><th colspan="3">Supervised by</th></tr><tr><th>Printed Name and<br>Contact No.</th><th>Position/<br>Designation</th><th>License No /<br>Expiry Date</th></tr></thead>`;
+          table.innerHTML = `<colgroup><col style="width:18%"><col style="width:5%"><col style="width:18%"><col style="width:8%"><col style="width:17%"><col style="width:12%"><col style="width:11%"><col style="width:11%"></colgroup><thead><tr><th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case No.</th><th rowspan="2">${getPrcDiagnosisHeader(key)}</th><th rowspan="2">Date &amp; Time<br>Performed</th><th rowspan="2">Full Name, Address of Facility &amp;<br>Contact Number</th><th colspan="3">Supervised by</th></tr><tr><th>Printed Name and<br>Contact No.</th><th>Position/<br>Designation</th><th>License No /<br>Expiry Date</th></tr></thead>`;
           const body = document.createElement("tbody");
           if (!records.length) {
             const row = document.createElement("tr");
