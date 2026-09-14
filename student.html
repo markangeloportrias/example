@@ -4764,7 +4764,7 @@
             <div class="summary-student-detail"><span>Academic Year</span><strong></strong></div>
             <div class="summary-student-detail"><span>Registered Block</span><strong></strong></div>
             <div class="summary-student-detail"><span>Total Cases</span><strong></strong></div>
-            <div class="summary-student-detail"><span>Report Type</span><strong>Clinical Case Summary</strong></div>
+            <div class="summary-student-detail"><span>Parents Contact</span><strong></strong></div>
           </div>`;
         const summaryValues = [
           currentStudent?.contact_number || "Not provided",
@@ -4772,6 +4772,7 @@
           currentStudent?.registered_school_year || currentStudent?.academic_year || "Not provided",
           currentStudent?.block_label || currentStudent?.registered_block || "Not provided",
           String(cases.length),
+          currentStudent?.parent_contact || "Not provided",
         ];
         const identityStrong = info.querySelector(".summary-student-identity strong");
         const identitySmall = info.querySelector(".summary-student-identity small");
