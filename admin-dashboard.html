@@ -258,7 +258,7 @@
                     Total students
                   </div>
                 </div>
-                <div class="summary-box">
+                <div class="summary-box" id="dashboardRecordsCard" role="button" tabindex="0" aria-label="Open Annual Records">
                   <div class="icon"><i class="fas fa-folder"></i></div>
                   <div class="label">Records</div>
                   <div class="value" id="dashboardRecordsValue">0</div>
@@ -7142,6 +7142,13 @@
           }
           if (targetId) showCard(targetId);
         });
+      });
+      document.getElementById("dashboardRecordsCard")?.addEventListener("click", () => showCard("yearlyReportsCard"));
+      document.getElementById("dashboardRecordsCard")?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          showCard("yearlyReportsCard");
+        }
       });
 
       [
