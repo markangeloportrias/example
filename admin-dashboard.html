@@ -6530,7 +6530,7 @@
           <td class="action-cell">
             <button class="mini-btn" data-action="view-request" data-id="${req.id || ""}">View</button>
             ${req.status === "pending" ? `<button class="mini-btn success" data-action="approve-request" data-id="${req.id || ""}">Approve</button><button class="mini-btn danger" data-action="reject-request" data-id="${req.id || ""}">Reject</button>` : ""}
-            <button class="mini-btn danger" data-action="delete-request" data-id="${req.id || ""}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
+            <button class="mini-btn danger" data-action="delete-request" data-id="${req.id || ""}" data-request-index="${adminEditRequests.indexOf(req)}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
           </td>
         `;
           editRequestsTbody.appendChild(tr);
@@ -6589,11 +6589,11 @@
         refreshOverview();
       }
 
-      function deleteEditRequest(requestId) {
+      function deleteEditRequest(request) {
         (async () => {
           const confirmed = await showOptionPane("Permanently delete this edit request and its related notification? This cannot be undone.", { title: "Delete Edit Request", confirmLabel: "Delete" });
           if (!confirmed) return;
-          const result = await ApiClient.permanentlyDeleteEditRequest(requestId);
+          const result = await ApiClient.permanentlyDeleteEditRequest(request);
           if (!result?.ok) {
             await showMessageDialog(result?.message || "Unable to delete edit request.", "Delete Failed");
             return;
@@ -7109,7 +7109,11 @@
         if (action === "view-request") viewEditRequest(requestId);
         if (action === "approve-request") decideEditRequest(requestId, "approve");
         if (action === "reject-request") decideEditRequest(requestId, "reject");
-        if (action === "delete-request") deleteEditRequest(requestId);
+        if (action === "delete-request") {
+          const requestIndex = Number.parseInt(btn.getAttribute("data-request-index"), 10);
+          const request = Number.isInteger(requestIndex) ? adminEditRequests[requestIndex] : null;
+          deleteEditRequest(request || { id: requestId });
+        }
       });
 
       // Delegated fallback keeps navigation available if the sidebar is redrawn.

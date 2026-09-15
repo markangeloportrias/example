@@ -2908,8 +2908,18 @@
   ApiClient.restoreEditRequest = async function (requestId) {
     try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/restore',{method:'PATCH',body:'{}'});}catch(error){return {ok:false,message:error.message};}
   };
-  ApiClient.permanentlyDeleteEditRequest = async function (requestId) {
-    try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/delete',{method:'PATCH',body:'{}'});}catch(error){return {ok:false,message:error.message};}
+  ApiClient.permanentlyDeleteEditRequest = async function (request) {
+    var requestIdentity = request && typeof request === 'object' ? {
+      student_id: request.student_id || request.studentId || '',
+      procedure_key: request.procedure_key || request.procedureKey || '',
+      case_numbers: request.case_numbers || request.caseNumbers || [],
+      requested_at: request.requested_at || request.requestedAt || ''
+    } : null;
+    var requestId = request && typeof request === 'object' ? request.id : request;
+    var hasDetails = requestIdentity && requestIdentity.student_id && requestIdentity.procedure_key && requestIdentity.requested_at;
+    var path = hasDetails ? 'edit-requests/delete' : 'edit-requests/'+encodeURIComponent(requestId)+'/delete';
+    var body = hasDetails ? {request_identity: requestIdentity} : {};
+    try{return await mysqlRequest(path,{method:'PATCH',body:JSON.stringify(body)});}catch(error){return {ok:false,message:error.message};}
   };
   ApiClient.cancelEditRequest = async function (requestId, request) {
     return ApiClient.archiveEditRequest(requestId, request);

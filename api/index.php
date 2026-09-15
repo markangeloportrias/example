@@ -1333,19 +1333,34 @@ try {
             $pdo->commit();
             respond(['ok'=>$changed, 'message'=>$changed ? '' : 'The correction request was not changed. Refresh the list and try again.']);
         }
-        if ($method === 'PATCH' && $id !== '' && $action === 'delete') {
+        if ($method === 'PATCH' && (($id !== '' && $action === 'delete') || ($id === 'delete' && $action === ''))) {
             if (!in_array($user['role'], ['admin', 'instructor', 'student'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
-            $requestStmt = $pdo->prepare('SELECT student_id FROM edit_requests WHERE id=?');
-            $requestStmt->execute([$id]);
-            $request = $requestStmt->fetch();
+            $deleteByDetails = $id === 'delete' && $action === '';
+            if ($deleteByDetails) {
+                $requestIdentity = is_array($data['request_identity'] ?? null) ? $data['request_identity'] : [];
+                foreach (['student_id', 'procedure_key', 'case_numbers', 'requested_at'] as $field) {
+                    if (!array_key_exists($field, $requestIdentity)) respond(['ok'=>false,'message'=>'Edit request details are incomplete.'],422);
+                }
+                $caseNumbers = is_array($requestIdentity['case_numbers']) ? json_encode($requestIdentity['case_numbers']) : (string)$requestIdentity['case_numbers'];
+                $requestStmt = $pdo->prepare('SELECT id,student_id FROM edit_requests WHERE student_id=? AND procedure_key=? AND case_numbers=? AND requested_at=? LIMIT 2');
+                $requestStmt->execute([(string)$requestIdentity['student_id'], (string)$requestIdentity['procedure_key'], $caseNumbers, (string)$requestIdentity['requested_at']]);
+                $requestMatches = $requestStmt->fetchAll();
+                if (count($requestMatches) > 1) respond(['ok'=>false,'message'=>'Multiple edit requests match these details. Refresh and try again.'],409);
+                $request = $requestMatches[0] ?? false;
+            } else {
+                $requestStmt = $pdo->prepare('SELECT id,student_id FROM edit_requests WHERE id=?');
+                $requestStmt->execute([$id]);
+                $request = $requestStmt->fetch();
+            }
             if (!$request) respond(['ok'=>false,'message'=>'Edit request not found.'],404);
             if ($user['role'] === 'student' && $user['user_uid'] !== (string)$request['student_id']) respond(['ok'=>false,'message'=>'Access denied.'],403);
+            $deleteId = (string)$request['id'];
             $pdo->beginTransaction();
             try {
-                $pdo->prepare('DELETE FROM notification_history WHERE request_id=?')->execute([$id]);
+                $pdo->prepare('DELETE FROM notification_history WHERE request_id=?')->execute([$deleteId]);
                 $stmt = $pdo->prepare('DELETE FROM edit_requests WHERE id=?');
-                $stmt->execute([$id]);
-                if ($stmt->rowCount() > 0) audit($pdo,$user,'delete_permanently','edit_request',$id);
+                $stmt->execute([$deleteId]);
+                if ($stmt->rowCount() > 0) audit($pdo,$user,'delete_permanently','edit_request',$deleteId);
                 $pdo->commit();
                 respond(['ok'=>$stmt->rowCount()>0]);
             } catch (Throwable $error) {
