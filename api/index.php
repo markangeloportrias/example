@@ -1366,9 +1366,14 @@ try {
             $deleteId = (string)$request['id'];
             $pdo->beginTransaction();
             try {
-                $pdo->prepare('DELETE FROM notification_history WHERE request_id=?')->execute([$deleteId]);
-                $stmt = $pdo->prepare('DELETE FROM edit_requests WHERE id=?');
-                $stmt->execute([$deleteId]);
+                if ($deleteByDetails) {
+                    $stmt = $pdo->prepare("DELETE FROM edit_requests WHERE student_id=? AND procedure_key=? AND case_numbers=? AND requested_at=? AND status IN ('approved','rejected') LIMIT 1");
+                    $stmt->execute([(string)$requestIdentity['student_id'], (string)$requestIdentity['procedure_key'], $caseNumbers, (string)$requestIdentity['requested_at']]);
+                } else {
+                    $stmt = $pdo->prepare('DELETE FROM edit_requests WHERE id=? AND status IN (\'approved\',\'rejected\') LIMIT 1');
+                    $stmt->execute([$deleteId]);
+                }
+                if ($stmt->rowCount() > 0 && $deleteId !== '') $pdo->prepare('DELETE FROM notification_history WHERE request_id=?')->execute([$deleteId]);
                 if ($stmt->rowCount() > 0) audit($pdo,$user,'delete_permanently','edit_request',$deleteId);
                 $pdo->commit();
                 respond(['ok'=>$stmt->rowCount()>0]);
