@@ -2676,6 +2676,12 @@ html body.role-admin #yearlyReportPanel #yearlyProcedureTables table.prc-procedu
   line-height: 1.2 !important;
 }
 
+/* Keep only Annual Records table values black. */
+html body.role-admin #yearlyReportPanel #yearlyProcedureTables table.prc-procedure-table tbody td.record-detail-cell,
+html body.role-admin #yearlyReportPanel #yearlyProcedureTables table.prc-procedure-table tbody td.record-detail-cell > :is(.record-detail-primary, .record-detail-secondary) {
+  color: #000 !important;
+}
+
 html body.role-admin #yearlyReportPanel #yearlyProcedureTables table.prc-procedure-table .record-detail-secondary {
   margin-top: 3px;
 }
