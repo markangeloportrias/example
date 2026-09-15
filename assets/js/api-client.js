@@ -2926,6 +2926,17 @@
   };
   ApiClient.approveEditRequest = async function (requestId, caseNo) {
     try {
+      if (requestId && typeof requestId === 'object') {
+        var approveIdentity = {
+          student_id: requestId.student_id || requestId.studentId || '',
+          procedure_key: requestId.procedure_key || requestId.procedureKey || '',
+          case_numbers: requestId.case_numbers || requestId.caseNumbers || [],
+          requested_at: requestId.requested_at || requestId.requestedAt || ''
+        };
+        if (approveIdentity.student_id && approveIdentity.procedure_key && approveIdentity.requested_at) {
+          return await mysqlRequest('edit-requests/approve',{method:'PATCH',body:JSON.stringify({request_identity:approveIdentity})});
+        }
+      }
       var response = await mysqlRequest('edit-requests');
       var matches = (response.requests || []).filter(function (request) {
         if (String(request.id) !== String(requestId)) return false;
@@ -2944,7 +2955,20 @@
     catch(error){return {ok:false,message:error.message};}
   };
   ApiClient.rejectEditRequest = async function (requestId, remarks) {
-    try { return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/reject',{method:'PATCH',body:JSON.stringify({remarks:remarks||''})}); }
+    try {
+      if (requestId && typeof requestId === 'object') {
+        var rejectIdentity = {
+          student_id: requestId.student_id || requestId.studentId || '',
+          procedure_key: requestId.procedure_key || requestId.procedureKey || '',
+          case_numbers: requestId.case_numbers || requestId.caseNumbers || [],
+          requested_at: requestId.requested_at || requestId.requestedAt || ''
+        };
+        if (rejectIdentity.student_id && rejectIdentity.procedure_key && rejectIdentity.requested_at) {
+          return await mysqlRequest('edit-requests/reject',{method:'PATCH',body:JSON.stringify({remarks:remarks||'',request_identity:rejectIdentity})});
+        }
+      }
+      return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/reject',{method:'PATCH',body:JSON.stringify({remarks:remarks||''})});
+    }
     catch(error){return {ok:false,message:error.message};}
   };
   ApiClient.getNotificationHistory = async function (filters) {

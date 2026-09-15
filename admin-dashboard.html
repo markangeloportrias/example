@@ -6513,6 +6513,7 @@
             ? req.caseNumbers.join(", ")
             : req.caseNumbers || "-";
           const canDelete = ["approved", "rejected"].includes(normalizeText(req.status));
+          const requestIndex = adminEditRequests.indexOf(req);
           const createdTs = req.createdAt || req.requestedAt || req.requestedAt;
           const created = createdTs ? PhilippineTime.parse(createdTs).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "-";
           const statusBadge = req.status === "approved"
@@ -6530,8 +6531,8 @@
           <td>${created}</td>
           <td class="action-cell">
             <button class="mini-btn" data-action="view-request" data-id="${req.id || ""}">View</button>
-            ${req.status === "pending" ? `<button class="mini-btn success" data-action="approve-request" data-id="${req.id || ""}">Approve</button><button class="mini-btn danger" data-action="reject-request" data-id="${req.id || ""}">Reject</button>` : ""}
-            ${canDelete ? `<button class="mini-btn danger" data-action="delete-request" data-id="${req.id || ""}" data-request-index="${adminEditRequests.indexOf(req)}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>` : ""}
+            ${req.status === "pending" ? `<button class="mini-btn success" data-action="approve-request" data-id="${req.id || ""}" data-request-index="${requestIndex}">Approve</button><button class="mini-btn danger" data-action="reject-request" data-id="${req.id || ""}" data-request-index="${requestIndex}">Reject</button>` : ""}
+            ${canDelete ? `<button class="mini-btn danger" data-action="delete-request" data-id="${req.id || ""}" data-request-index="${requestIndex}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>` : ""}
           </td>
         `;
           editRequestsTbody.appendChild(tr);
@@ -6566,7 +6567,7 @@
         await showMessageDialog(details, "Edit Request Details");
       }
 
-      async function decideEditRequest(requestId, decision) {
+      async function decideEditRequest(request, decision) {
         const approving = decision === "approve";
         const confirmed = await showOptionPane(
           `${approving ? "Approve" : "Reject"} this student edit request?`,
@@ -6579,8 +6580,8 @@
           if (remarks === null) return;
         }
         const result = approving
-          ? await ApiClient.approveEditRequest(requestId)
-          : await ApiClient.rejectEditRequest(requestId, remarks);
+          ? await ApiClient.approveEditRequest(request)
+          : await ApiClient.rejectEditRequest(request, remarks);
         if (!result?.ok) {
           await showMessageDialog(result?.message || `Unable to ${decision} request.`, "Request Update Failed");
           return;
@@ -7108,12 +7109,12 @@
         if (!btn) return;
         const action = btn.getAttribute("data-action");
         const requestId = btn.getAttribute("data-id");
+        const requestIndex = Number.parseInt(btn.getAttribute("data-request-index"), 10);
+        const request = Number.isInteger(requestIndex) ? adminEditRequests[requestIndex] : null;
         if (action === "view-request") viewEditRequest(requestId);
-        if (action === "approve-request") decideEditRequest(requestId, "approve");
-        if (action === "reject-request") decideEditRequest(requestId, "reject");
+        if (action === "approve-request") decideEditRequest(request || { id: requestId }, "approve");
+        if (action === "reject-request") decideEditRequest(request || { id: requestId }, "reject");
         if (action === "delete-request") {
-          const requestIndex = Number.parseInt(btn.getAttribute("data-request-index"), 10);
-          const request = Number.isInteger(requestIndex) ? adminEditRequests[requestIndex] : null;
           deleteEditRequest(request || { id: requestId });
         }
       });

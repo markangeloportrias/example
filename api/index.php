@@ -1278,13 +1278,20 @@ try {
             $pdo->commit();
             respond(['ok'=>true,'id'=>$requestId],201);
         }
-        if ($method === 'PATCH' && $id !== '' && in_array($action, ['approve','reject','archive','restore'], true)) {
+        $detailDecision = $method === 'PATCH' && $action === '' && in_array($id, ['approve', 'reject'], true);
+        if ($method === 'PATCH' && (($id !== '' && in_array($action, ['approve','reject','archive','restore'], true)) || $detailDecision)) {
+            if ($detailDecision) $action = $id;
             if ($action !== 'archive' && !in_array($user['role'], ['admin','instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
             $pdo->beginTransaction();
-            $requestWhere = 'id=?';
-            $requestParams = [$id];
+            $requestWhere = $detailDecision ? '1=1' : 'id=?';
+            $requestParams = $detailDecision ? [] : [$id];
             if (in_array($action, ['approve', 'reject'], true)) $requestWhere .= ' AND archived_at IS NULL';
             $requestIdentity = is_array($data['request_identity'] ?? null) ? $data['request_identity'] : [];
+            if ($detailDecision) {
+                foreach (['student_id', 'procedure_key', 'case_numbers', 'requested_at'] as $field) {
+                    if (!array_key_exists($field, $requestIdentity)) respond(['ok'=>false,'message'=>'Edit request details are incomplete.'],422);
+                }
+            }
             foreach (['student_id', 'procedure_key', 'case_numbers', 'requested_at'] as $field) {
                 if (!array_key_exists($field, $requestIdentity)) continue;
                 $requestWhere .= " AND `$field`=?";
@@ -1302,6 +1309,7 @@ try {
                 $pdo->rollBack();
                 respond(['ok'=>false,'message'=>'Edit request not found.'],404);
             }
+            $resolvedRequestId = (string)$currentRequest['id'];
             $nextStatus = $action === 'approve' ? 'approved' : 'rejected';
             if (in_array($action, ['approve','reject'], true) && ($currentRequest['archived_at'] !== null || $currentRequest['status'] === $nextStatus)) {
                 $pdo->commit();
@@ -1325,11 +1333,11 @@ try {
                     $caseNumbers = json_decode((string)($request['case_numbers'] ?? ''), true);
                     $caseNumber = is_array($caseNumbers) ? implode(', ', array_filter(array_map('strval', $caseNumbers), static fn($value) => trim($value) !== '')) : '';
                     $notice=$pdo->prepare('INSERT INTO notification_history (event_type,student_id,procedure_key,procedure_type,case_no,request_id,message,remarks) VALUES (?,?,?,?,?,?,?,?)');
-                    $notice->execute(['edit_request_'.$action,$request['student_id'],$request['procedure_key'],$request['procedure_name'],$caseNumber ?: null,$id,'Your edit request was '.$action.'.',$data['remarks']??null]);
+                    $notice->execute(['edit_request_'.$action,$request['student_id'],$request['procedure_key'],$request['procedure_name'],$caseNumber ?: null,$resolvedRequestId,'Your edit request was '.$action.'.',$data['remarks']??null]);
                 }
             }
             $changed = $stmt->rowCount() > 0;
-            if ($changed) audit($pdo,$user,$action,'edit_request',$id);
+            if ($changed) audit($pdo,$user,$action,'edit_request',$resolvedRequestId);
             $pdo->commit();
             respond(['ok'=>$changed, 'message'=>$changed ? '' : 'The correction request was not changed. Refresh the list and try again.']);
         }
