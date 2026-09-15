@@ -217,6 +217,37 @@ function databaseTableColumns(PDO $pdo, string $table): array
     return array_map(static fn(array $row): string => (string)$row['Field'], $rows);
 }
 
+function portalBackupNaturalIdentity(string $table, array $row): array
+{
+    $fields = match ($table) {
+        'case_records' => ['student_id', 'procedure_key', 'academic_year', 'case_no', 'patient_name', 'date_time_performed'],
+        'edit_requests' => ['student_id', 'procedure_key', 'case_numbers', 'requested_at'],
+        'notification_history' => ['event_type', 'student_id', 'procedure_key', 'case_no', 'message', 'created_at'],
+        'chat_messages' => ['student_id', 'instructor_id', 'sender_role', 'sender_name', 'message', 'created_at'],
+        'audit_trail' => ['actor_role', 'actor_uid', 'action_name', 'entity_type', 'entity_uid', 'details', 'created_at'],
+        'case_comments' => !empty($row['source_key'])
+            ? ['source_key']
+            : ['author_uid', 'author_name', 'author_role', 'comment_text', 'created_at'],
+        default => [],
+    };
+
+    foreach ($fields as $field) {
+        if (!array_key_exists($field, $row)) return [];
+    }
+    return array_combine($fields, array_map(static fn(string $field) => $row[$field], $fields)) ?: [];
+}
+
+function portalBackupRowExists(PDO $pdo, string $table, array $row): bool
+{
+    $identity = portalBackupNaturalIdentity($table, $row);
+    if ($identity === []) return false;
+
+    $where = implode(' AND ', array_map(static fn(string $field): string => "`$field` <=> ?", array_keys($identity)));
+    $stmt = $pdo->prepare("SELECT 1 FROM `$table` WHERE $where LIMIT 1");
+    $stmt->execute(array_values($identity));
+    return (bool)$stmt->fetchColumn();
+}
+
 function schoolYearsWithBlocks(PDO $pdo): array
 {
     $years = $pdo->query("SELECT y.id,y.label,y.status,y.created_at,COUNT(DISTINCT b.id) AS block_count,COUNT(DISTINCT s.student_id) AS student_count FROM school_years y LEFT JOIN student_blocks b ON b.school_year_id=y.id AND b.archived_at IS NULL LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE y.archived_at IS NULL GROUP BY y.id,y.label,y.status,y.created_at,y.start_year ORDER BY y.start_year DESC")->fetchAll();
@@ -245,7 +276,7 @@ function createPortalBackup(PDO $pdo, array $user): array
     ];
 }
 
-function restorePortalBackup(PDO $pdo, array $snapshot, array $user): void
+function restorePortalBackup(PDO $pdo, array $snapshot, array $user): bool
 {
     if (($snapshot['app'] ?? '') !== 'midwife-clinical-portal' || !is_array($snapshot['tables'] ?? null)) {
         respond(['ok' => false, 'message' => 'The selected file is not a valid MIDWIFE database backup.'], 422);
@@ -253,6 +284,11 @@ function restorePortalBackup(PDO $pdo, array $snapshot, array $user): void
     $backupTables = $snapshot['tables'];
     $restoreTables = array_values(array_filter(PORTAL_BACKUP_TABLES, static fn(string $table): bool => array_key_exists($table, $backupTables)));
     if (!$restoreTables) respond(['ok' => false, 'message' => 'The backup does not contain portal records.'], 422);
+    $backupHash = hash('sha256', json_encode($backupTables, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    $backupMarker = 'backup_import_' . $backupHash;
+    $alreadyImported = $pdo->prepare('SELECT 1 FROM system_meta WHERE meta_key=?');
+    $alreadyImported->execute([$backupMarker]);
+    if ($alreadyImported->fetchColumn()) return false;
 
     $pdo->beginTransaction();
     try {
@@ -262,8 +298,10 @@ function restorePortalBackup(PDO $pdo, array $snapshot, array $user): void
             foreach ((array)$backupTables[$table] as $row) {
                 if (!is_array($row)) continue;
                 if ($table === 'system_meta' && ($row['meta_key'] ?? '') === PORTAL_STARTUP_KEY) continue;
+                if ($table === 'system_meta' && str_starts_with((string)($row['meta_key'] ?? ''), 'backup_import_')) continue;
                 $row = array_intersect_key($row, $allowedColumns);
                 if (!$row) continue;
+                if (portalBackupRowExists($pdo, $table, $row)) continue;
                 $columns = array_keys($row);
                 $quotedColumns = implode(',', array_map(static fn(string $column): string => "`$column`", $columns));
                 $placeholders = implode(',', array_fill(0, count($columns), '?'));
@@ -274,12 +312,15 @@ function restorePortalBackup(PDO $pdo, array $snapshot, array $user): void
             }
         }
         migrateLegacyCredentials($pdo);
+        $saveImport = $pdo->prepare('INSERT INTO system_meta (meta_key,meta_value) VALUES (?,?)');
+        $saveImport->execute([$backupMarker, json_encode(['imported_at' => gmdate('c')])]);
         $pdo->commit();
     } catch (Throwable $error) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         throw $error;
     }
     audit($pdo, $user, 'restore_backup', 'system', '', ['exported_at' => (string)($snapshot['exported_at'] ?? '')]);
+    return true;
 }
 
 $parts = pathParts();
@@ -299,8 +340,8 @@ try {
             if (($data['confirmation'] ?? '') !== 'RESTORE') {
                 respond(['ok' => false, 'message' => 'Type RESTORE to confirm merging this database backup.'], 422);
             }
-            restorePortalBackup($pdo, (array)($data['backup'] ?? []), $user);
-            respond(['ok' => true]);
+            $imported = restorePortalBackup($pdo, (array)($data['backup'] ?? []), $user);
+            respond(['ok' => true, 'already_imported' => !$imported]);
         }
         respond(['ok' => false, 'message' => 'Backup endpoint not found.'], 404);
     }

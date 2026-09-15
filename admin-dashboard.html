@@ -1678,7 +1678,12 @@
           )) return;
           const result = await ApiClient.restoreDatabaseBackup(parsed);
           if (!result?.ok) throw new Error(result?.message || "Unable to restore the database backup.");
-          await showMessageDialog("Backup imported successfully. Existing records were preserved.", "Backup Imported");
+          await showMessageDialog(
+            result.already_imported
+              ? "This backup was already imported. No duplicate records were added."
+              : "Backup imported successfully. Existing records were preserved.",
+            "Backup Imported",
+          );
           window.location.reload();
         } catch (error) {
           await showMessageDialog(error.message || "Unable to restore the selected backup.", "Restore Failed");
