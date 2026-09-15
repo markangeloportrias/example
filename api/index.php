@@ -366,7 +366,7 @@ try {
         currentUser($pdo, ['admin', 'instructor']);
         $year=trim((string)($_GET['school_year']??''));
         $blockId=trim((string)($_GET['block_id']??''));
-        $stmt=$pdo->prepare("SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL ".($blockId !== '' ? 'AND b.id=?' : ($year !== '' ? 'AND y.label=?' : ''))." ORDER BY s.student_name");
+        $stmt=$pdo->prepare("SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND NOT EXISTS (SELECT 1 FROM students s_duplicate WHERE s_duplicate.student_id=s.student_id AND s_duplicate.archived_at IS NULL AND s_duplicate.id<s.id) ".($blockId !== '' ? 'AND b.id=?' : ($year !== '' ? 'AND y.label=?' : ''))." ORDER BY s.student_name");
         $stmt->execute($blockId !== '' ? [$blockId] : ($year !== '' ? [$year] : []));
         respond(['ok'=>true,'students'=>$stmt->fetchAll()]);
     }
@@ -479,10 +479,12 @@ try {
             }
             if ($user['role']==='student') respond(['ok'=>false,'message'=>'Access denied.'],403);
             $archived = ($_GET['archived'] ?? '0') === '1';
+            $studentState = $archived ? 's.archived_at IS NOT NULL' : 's.archived_at IS NULL';
+            $duplicateStudentState = $archived ? 's_duplicate.archived_at IS NOT NULL' : 's_duplicate.archived_at IS NULL';
             $stmt = $pdo->prepare("SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,s.profile_photo,s.status,s.archived_at,s.created_at,
                 (SELECT y.label FROM student_block_assignments a JOIN student_blocks b ON b.id=a.block_id AND b.archived_at IS NULL JOIN school_years y ON y.id=b.school_year_id AND y.archived_at IS NULL WHERE a.student_id=s.student_id AND a.archived_at IS NULL ORDER BY (y.status='active') DESC,y.start_year DESC LIMIT 1) AS registered_school_year,
                 (SELECT b.label FROM student_block_assignments a JOIN student_blocks b ON b.id=a.block_id AND b.archived_at IS NULL JOIN school_years y ON y.id=b.school_year_id AND y.archived_at IS NULL WHERE a.student_id=s.student_id AND a.archived_at IS NULL ORDER BY (y.status='active') DESC,y.start_year DESC LIMIT 1) AS block_label
-                FROM students s WHERE ".($archived ? 's.archived_at IS NOT NULL' : 's.archived_at IS NULL')." ORDER BY s.student_name");
+                FROM students s WHERE ".$studentState." AND NOT EXISTS (SELECT 1 FROM students s_duplicate WHERE s_duplicate.student_id=s.student_id AND ".$duplicateStudentState." AND s_duplicate.id<s.id) ORDER BY s.student_name");
             $stmt->execute();
             respond(['ok' => true, 'students' => $stmt->fetchAll()]);
         }
@@ -735,11 +737,11 @@ try {
             $year = trim((string)($_GET['school_year'] ?? ''));
             $blockId = trim((string)($_GET['block_id'] ?? ''));
             if (($_GET['unassigned'] ?? '0') === '1') {
-                $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact FROM students s WHERE s.archived_at IS NULL AND NOT EXISTS (SELECT 1 FROM student_block_assignments a JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.student_id=s.student_id AND a.archived_at IS NULL AND y.label=?) ORDER BY s.student_name');
+                $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact FROM students s WHERE s.archived_at IS NULL AND NOT EXISTS (SELECT 1 FROM students s_duplicate WHERE s_duplicate.student_id=s.student_id AND s_duplicate.archived_at IS NULL AND s_duplicate.id<s.id) AND NOT EXISTS (SELECT 1 FROM student_block_assignments a JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.student_id=s.student_id AND a.archived_at IS NULL AND y.label=?) ORDER BY s.student_name');
                 $stmt->execute([$year]);
                 respond(['ok' => true, 'students' => $stmt->fetchAll()]);
             }
-            $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL '.($blockId !== '' ? 'AND b.id=?' : ($year !== '' ? 'AND y.label=?' : '')).' ORDER BY s.student_name');
+            $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND NOT EXISTS (SELECT 1 FROM students s_duplicate WHERE s_duplicate.student_id=s.student_id AND s_duplicate.archived_at IS NULL AND s_duplicate.id<s.id) '.($blockId !== '' ? 'AND b.id=?' : ($year !== '' ? 'AND y.label=?' : '')).' ORDER BY s.student_name');
             $stmt->execute($blockId !== '' ? [$blockId] : ($year !== '' ? [$year] : []));
             respond(['ok' => true, 'students' => $stmt->fetchAll()]);
         }
