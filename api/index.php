@@ -1260,8 +1260,9 @@ try {
         $user = currentUser($pdo, ['admin', 'instructor', 'student']);
         if ($method === 'GET') {
             $archived = ($_GET['archived'] ?? '0') === '1';
-            $where = $archived ? ' AND archived_at IS NOT NULL' : ' AND archived_at IS NULL';
-            if ($user['role'] === 'student') $where .= ' AND student_id=?';
+            $where = $user['role'] === 'student'
+                ? ' AND student_id=?'
+                : ($archived ? ' AND archived_at IS NOT NULL' : ' AND archived_at IS NULL');
             $stmt = $pdo->prepare('SELECT * FROM edit_requests WHERE 1=1' . $where . ' ORDER BY requested_at DESC');
             $stmt->execute($user['role'] === 'student' ? [$user['user_uid']] : []);
             respond(['ok' => true, 'requests' => $stmt->fetchAll()]);
@@ -1367,14 +1368,13 @@ try {
             $pdo->beginTransaction();
             try {
                 if ($deleteByDetails) {
-                    $stmt = $pdo->prepare("DELETE FROM edit_requests WHERE student_id=? AND procedure_key=? AND case_numbers=? AND requested_at=? AND status IN ('approved','rejected') LIMIT 1");
+                    $stmt = $pdo->prepare("UPDATE edit_requests SET archived_at=NOW() WHERE student_id=? AND procedure_key=? AND case_numbers=? AND requested_at=? AND status IN ('approved','rejected') AND archived_at IS NULL LIMIT 1");
                     $stmt->execute([(string)$requestIdentity['student_id'], (string)$requestIdentity['procedure_key'], $caseNumbers, (string)$requestIdentity['requested_at']]);
                 } else {
-                    $stmt = $pdo->prepare('DELETE FROM edit_requests WHERE id=? AND status IN (\'approved\',\'rejected\') LIMIT 1');
+                    $stmt = $pdo->prepare('UPDATE edit_requests SET archived_at=NOW() WHERE id=? AND status IN (\'approved\',\'rejected\') AND archived_at IS NULL LIMIT 1');
                     $stmt->execute([$deleteId]);
                 }
-                if ($stmt->rowCount() > 0 && $deleteId !== '') $pdo->prepare('DELETE FROM notification_history WHERE request_id=?')->execute([$deleteId]);
-                if ($stmt->rowCount() > 0) audit($pdo,$user,'delete_permanently','edit_request',$deleteId);
+                if ($stmt->rowCount() > 0) audit($pdo,$user,'dismiss','edit_request',$deleteId);
                 $pdo->commit();
                 respond(['ok'=>$stmt->rowCount()>0]);
             } catch (Throwable $error) {
