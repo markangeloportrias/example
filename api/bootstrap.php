@@ -28,8 +28,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Permanent deletion stays disabled except for the explicit Edit Requests route.
+// Match this with the router's path handling so it also works in a subdirectory.
 $requestPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '';
-$isEditRequestDelete = (bool)preg_match('#/api/edit-requests/[^/]+/?$#', $requestPath);
+$apiMarker = '/api/';
+$apiPosition = strpos($requestPath, $apiMarker);
+$requestRoute = $apiPosition === false ? trim($requestPath, '/') : substr($requestPath, $apiPosition + strlen($apiMarker));
+$requestParts = array_values(array_filter(explode('/', trim($requestRoute, '/')), 'strlen'));
+$isEditRequestDelete = count($requestParts) === 2 && $requestParts[0] === 'edit-requests' && $requestParts[1] !== '';
 if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && !$isEditRequestDelete) {
     http_response_code(405);
     echo json_encode(['ok' => false, 'message' => 'Permanent deletion is disabled. Use an archive endpoint.']);
