@@ -5724,11 +5724,27 @@
       async function renderYearlyRecordsBlocks() {
         if (!yearlyRecordsNav.year || !yearlyBlocksTbody) return;
         showDatabaseLoading(yearlyBlocksTbody, 5, "Loading blocks...");
-        const result = await ApiClient.getStudentBlocks(yearlyRecordsNav.year);
-        yearlyBlocks =
+        const [result, cases] = await Promise.all([
+          ApiClient.getStudentBlocks(yearlyRecordsNav.year),
+          ApiClient.getAllCasesForInstructor("", ""),
+        ]);
+        const blocks =
           result && result.ok && Array.isArray(result.blocks)
             ? result.blocks
             : [];
+        const allCases = Array.isArray(cases) ? cases : [];
+        yearlyBlocks = await Promise.all(blocks.map(async (block) => {
+          const roster = await ApiClient.getBlockStudents(
+            block.id,
+            yearlyRecordsNav.year,
+            block.label,
+          );
+          const studentIds = new Set((roster?.students || []).map((student) => String(student.student_id || "")));
+          return {
+            ...block,
+            record_count: allCases.filter((record) => studentIds.has(String(record.student_id || ""))).length,
+          };
+        }));
         renderYearlyBlockRows();
       }
 
