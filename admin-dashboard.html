@@ -6530,7 +6530,7 @@
           <td>${statusBadge}</td>
           <td>${created}</td>
           <td class="action-cell">
-            <button class="mini-btn" data-action="view-request" data-id="${req.id || ""}">View</button>
+            <button class="mini-btn" data-action="view-request" data-id="${req.id || ""}" data-request-index="${requestIndex}">View</button>
             ${req.status === "pending" ? `<button class="mini-btn success" data-action="approve-request" data-id="${req.id || ""}" data-request-index="${requestIndex}">Approve</button><button class="mini-btn danger" data-action="reject-request" data-id="${req.id || ""}" data-request-index="${requestIndex}">Reject</button>` : ""}
             ${canDelete ? `<button class="mini-btn danger" data-action="delete-request" data-id="${req.id || ""}" data-request-index="${requestIndex}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>` : ""}
           </td>
@@ -6554,10 +6554,10 @@
         }
       });
 
-      async function viewEditRequest(requestId) {
-        const request = adminEditRequests.find(
-          (r) => String(r.id) === String(requestId),
-        );
+      async function viewEditRequest(requestOrId) {
+        const request = requestOrId && typeof requestOrId === "object"
+          ? requestOrId
+          : adminEditRequests.find((r) => String(r.id) === String(requestOrId));
         if (!request) return;
 
         const caseNos = Array.isArray(request.caseNumbers)
@@ -7112,7 +7112,7 @@
         const requestId = btn.getAttribute("data-id");
         const requestIndex = Number.parseInt(btn.getAttribute("data-request-index"), 10);
         const request = Number.isInteger(requestIndex) ? adminEditRequests[requestIndex] : null;
-        if (action === "view-request") viewEditRequest(requestId);
+        if (action === "view-request") viewEditRequest(request || requestId);
         if (action === "approve-request") decideEditRequest(request || { id: requestId }, "approve");
         if (action === "reject-request") decideEditRequest(request || { id: requestId }, "reject");
         if (action === "delete-request") {
