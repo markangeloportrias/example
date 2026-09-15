@@ -220,13 +220,6 @@ function databaseTableColumns(PDO $pdo, string $table): array
 function portalBackupNaturalIdentity(string $table, array $row): array
 {
     $fields = match ($table) {
-        'procedures' => ['procedure_key'],
-        'students' => ['student_id'],
-        'instructor_accounts' => ['account_uid'],
-        'school_years' => ['label'],
-        'student_blocks' => ['school_year_id', 'label'],
-        'student_block_assignments' => ['student_id', 'school_year_id'],
-        'edit_permissions' => ['student_id', 'procedure_key'],
         'case_records' => ['student_id', 'procedure_key', 'academic_year', 'case_no', 'patient_name', 'date_time_performed'],
         'edit_requests' => ['student_id', 'procedure_key', 'case_numbers', 'requested_at'],
         'notification_history' => ['event_type', 'student_id', 'procedure_key', 'case_no', 'message', 'created_at'],
