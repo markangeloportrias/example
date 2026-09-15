@@ -6512,6 +6512,7 @@
           const caseNos = Array.isArray(req.caseNumbers)
             ? req.caseNumbers.join(", ")
             : req.caseNumbers || "-";
+          const canDelete = ["approved", "rejected"].includes(normalizeText(req.status));
           const createdTs = req.createdAt || req.requestedAt || req.requestedAt;
           const created = createdTs ? PhilippineTime.parse(createdTs).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "-";
           const statusBadge = req.status === "approved"
@@ -6530,7 +6531,7 @@
           <td class="action-cell">
             <button class="mini-btn" data-action="view-request" data-id="${req.id || ""}">View</button>
             ${req.status === "pending" ? `<button class="mini-btn success" data-action="approve-request" data-id="${req.id || ""}">Approve</button><button class="mini-btn danger" data-action="reject-request" data-id="${req.id || ""}">Reject</button>` : ""}
-            <button class="mini-btn danger" data-action="delete-request" data-id="${req.id || ""}" data-request-index="${adminEditRequests.indexOf(req)}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
+            ${canDelete ? `<button class="mini-btn danger" data-action="delete-request" data-id="${req.id || ""}" data-request-index="${adminEditRequests.indexOf(req)}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>` : ""}
           </td>
         `;
           editRequestsTbody.appendChild(tr);
@@ -6601,6 +6602,7 @@
           await loadAdminEditRequests();
           await loadAdminNotifications();
           refreshOverview();
+          await showMessageDialog("The edit request was deleted successfully.", "Delete Successful");
         })();
       }
 

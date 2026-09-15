@@ -1342,18 +1342,19 @@ try {
                     if (!array_key_exists($field, $requestIdentity)) respond(['ok'=>false,'message'=>'Edit request details are incomplete.'],422);
                 }
                 $caseNumbers = is_array($requestIdentity['case_numbers']) ? json_encode($requestIdentity['case_numbers']) : (string)$requestIdentity['case_numbers'];
-                $requestStmt = $pdo->prepare('SELECT id,student_id FROM edit_requests WHERE student_id=? AND procedure_key=? AND case_numbers=? AND requested_at=? LIMIT 2');
+                $requestStmt = $pdo->prepare('SELECT id,student_id,status FROM edit_requests WHERE student_id=? AND procedure_key=? AND case_numbers=? AND requested_at=? LIMIT 2');
                 $requestStmt->execute([(string)$requestIdentity['student_id'], (string)$requestIdentity['procedure_key'], $caseNumbers, (string)$requestIdentity['requested_at']]);
                 $requestMatches = $requestStmt->fetchAll();
                 if (count($requestMatches) > 1) respond(['ok'=>false,'message'=>'Multiple edit requests match these details. Refresh and try again.'],409);
                 $request = $requestMatches[0] ?? false;
             } else {
-                $requestStmt = $pdo->prepare('SELECT id,student_id FROM edit_requests WHERE id=?');
+                $requestStmt = $pdo->prepare('SELECT id,student_id,status FROM edit_requests WHERE id=?');
                 $requestStmt->execute([$id]);
                 $request = $requestStmt->fetch();
             }
             if (!$request) respond(['ok'=>false,'message'=>'Edit request not found.'],404);
             if ($user['role'] === 'student' && $user['user_uid'] !== (string)$request['student_id']) respond(['ok'=>false,'message'=>'Access denied.'],403);
+            if (!in_array(strtolower((string)$request['status']), ['approved', 'rejected'], true)) respond(['ok'=>false,'message'=>'Only approved or rejected edit requests can be deleted.'],409);
             $deleteId = (string)$request['id'];
             $pdo->beginTransaction();
             try {
