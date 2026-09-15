@@ -7282,7 +7282,13 @@
       }
 
       async function archiveInstructorStudent(studentId) {
-        if (!confirm("Move this student to the shared archive? Their records will be preserved.")) return;
+        const confirmed = await showOptionConfirm(
+          "Archive Student",
+          "Move this student to the shared archive? Their records will be preserved.",
+          "Archive",
+          "Cancel",
+        );
+        if (!confirmed) return;
         const result = await ApiClient.archiveStudent(studentId);
         if (result && result.ok) {
           showInstructorStudentsMessage("Student moved to the shared archive.", "success");
