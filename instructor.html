@@ -2911,7 +2911,14 @@
       }
 
       async function renderEditNotifications() {
-        const pending = await getPendingEditRequests();
+        const [pending, studentsResult] = await Promise.all([
+          getPendingEditRequests(),
+          ApiClient.getAllStudents().catch(() => ({ ok: false, students: [] })),
+        ]);
+        const studentsById = new Map(
+          (Array.isArray(studentsResult?.students) ? studentsResult.students : [])
+            .map((student) => [String(student.student_id || ""), student]),
+        );
         const sidebarDot = document.getElementById("sidebarNotifDot");
         if (sidebarDot) {
           sidebarDot.style.display = pending.length ? "inline-flex" : "none";
@@ -2933,11 +2940,7 @@
         pageList.innerHTML = "";
         instructorPendingEditRequests = pending;
         for (const [requestIndex, req] of pending.entries()) {
-          const studentResult =
-            ApiClient && ApiClient.getStudent
-              ? await ApiClient.getStudent(req.studentId)
-              : { ok: false };
-          const student = studentResult.ok ? studentResult.student : {};
+          const student = studentsById.get(String(req.studentId || "")) || {};
           const studentName = student.student_name || "Unknown Student";
           const when = req.requestedAt
             ? PhilippineTime.parse(req.requestedAt).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
@@ -3021,9 +3024,16 @@
       async function renderEditRequestsList() {
         const version = ++instructorRequestRenderVersion;
         console.log('[INSTRUCTOR_DEBUG] renderEditRequestsList() called');
-        const requests = await ApiClient.getEditRequests();
+        const [requests, studentsResult] = await Promise.all([
+          ApiClient.getEditRequests(),
+          ApiClient.getAllStudents().catch(() => ({ ok: false, students: [] })),
+        ]);
         if (version !== instructorRequestRenderVersion) return;
         instructorEditRequests = requests;
+        const studentsById = new Map(
+          (Array.isArray(studentsResult?.students) ? studentsResult.students : [])
+            .map((student) => [String(student.student_id || ""), student]),
+        );
         const pendingCount = requests.filter((request) => {
           const caseNo = normalizeCaseNo(request.caseNumbers?.[0]);
           const status = request.caseStatuses?.[caseNo] || request.status || "pending";
@@ -3057,11 +3067,7 @@
           </div>
         `;
         for (const [requestIndex, req] of requests.entries()) {
-          const studentResult =
-            ApiClient && ApiClient.getStudent
-              ? await ApiClient.getStudent(req.studentId)
-              : { ok: false };
-          const student = studentResult.ok ? studentResult.student : {};
+          const student = studentsById.get(String(req.studentId || "")) || {};
           const studentName = student.student_name || "Unknown Student";
           const studentId = student.student_id || req.studentId || "N/A";
           const when = req.requestedAt
