@@ -700,11 +700,8 @@
                   />
                 </div>
                 <input type="hidden" id="editRequestsStatusFilter" value="pending">
-                <button class="btn btn-secondary" id="toggleArchivedEditRequestsBtn" type="button">
-                  <i class="fas fa-box-archive" aria-hidden="true"></i> View Archived
-                </button>
                 <button class="btn btn-secondary" id="refreshEditRequestsBtn">
-                  Refresh
+                  <i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh
                 </button>
               </div>
               <div class="table-wrap">
@@ -1293,7 +1290,6 @@
       const archivedStudentsBtnLabel = document.getElementById("archivedStudentsBtnLabel");
       const deletedArchivedStudentIds = new Set();
       let adminEditRequests = [];
-      let viewingArchivedEditRequests = false;
       let adminNotifications = [];
       let viewingArchivedNotifications = false;
       const studentsBreadcrumb = document.getElementById("studentsBreadcrumb");
@@ -1392,9 +1388,6 @@
       );
       const refreshEditRequestsBtn = document.getElementById(
         "refreshEditRequestsBtn",
-      );
-      const toggleArchivedEditRequestsBtn = document.getElementById(
-        "toggleArchivedEditRequestsBtn",
       );
       const editRequestsTbody = document.getElementById("editRequestsTbody");
       const editRequestsEmpty = document.getElementById("editRequestsEmpty");
@@ -6512,9 +6505,7 @@
         const requests = getEditRequestsFiltered();
         editRequestsTbody.innerHTML = "";
         editRequestsEmpty.style.display = requests.length ? "none" : "block";
-        editRequestsEmpty.textContent = viewingArchivedEditRequests
-          ? "No archived edit requests found."
-          : "No edit requests found.";
+        editRequestsEmpty.textContent = "No edit requests found.";
 
         requests.forEach((req, index) => {
           const tr = document.createElement("tr");
@@ -6523,9 +6514,7 @@
             : req.caseNumbers || "-";
           const createdTs = req.createdAt || req.requestedAt || req.requestedAt;
           const created = createdTs ? PhilippineTime.parse(createdTs).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "-";
-          const statusBadge = viewingArchivedEditRequests
-            ? '<span class="edit-request-status archived">Archived</span>'
-            : req.status === "approved"
+          const statusBadge = req.status === "approved"
               ? '<span class="edit-request-status approved">Approved</span>'
               : req.status === "rejected"
                 ? '<span class="edit-request-status rejected">Rejected</span>'
@@ -6540,10 +6529,8 @@
           <td>${created}</td>
           <td class="action-cell">
             <button class="mini-btn" data-action="view-request" data-id="${req.id || ""}">View</button>
-            ${!viewingArchivedEditRequests && req.status === "pending" ? `<button class="mini-btn success" data-action="approve-request" data-id="${req.id || ""}">Approve</button><button class="mini-btn danger" data-action="reject-request" data-id="${req.id || ""}">Reject</button>` : ""}
-            ${viewingArchivedEditRequests
-              ? `<button class="mini-btn success" data-action="restore-request" data-id="${req.id || ""}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restore</button><button class="mini-btn danger" data-action="delete-archived-request" data-id="${req.id || ""}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>`
-              : `<button class="mini-btn" data-action="delete-request" data-id="${req.id || ""}">Archive</button>`}
+            ${req.status === "pending" ? `<button class="mini-btn success" data-action="approve-request" data-id="${req.id || ""}">Approve</button><button class="mini-btn danger" data-action="reject-request" data-id="${req.id || ""}">Reject</button>` : ""}
+            <button class="mini-btn danger" data-action="delete-request" data-id="${req.id || ""}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
           </td>
         `;
           editRequestsTbody.appendChild(tr);
@@ -6604,14 +6591,15 @@
 
       function deleteEditRequest(requestId) {
         (async () => {
-          const confirmed = await showOptionPane("Archive this edit request?", { title: "Archive Edit Request", confirmLabel: "Archive" });
+          const confirmed = await showOptionPane("Permanently delete this edit request and its related notification? This cannot be undone.", { title: "Delete Edit Request", confirmLabel: "Delete" });
           if (!confirmed) return;
-          const result = await ApiClient.archiveEditRequest(requestId);
+          const result = await ApiClient.permanentlyDeleteEditRequest(requestId);
           if (!result?.ok) {
-            await showMessageDialog(result?.message || "Unable to archive edit request.", "Archive Failed");
+            await showMessageDialog(result?.message || "Unable to delete edit request.", "Delete Failed");
             return;
           }
           await loadAdminEditRequests();
+          await loadAdminNotifications();
           refreshOverview();
         })();
       }
@@ -6709,23 +6697,12 @@
       }
 
       async function loadAdminEditRequests() {
-        const requestedArchived = viewingArchivedEditRequests;
         try {
-          const requests = await ApiClient.getEditRequests({ archived: requestedArchived });
-          if (requestedArchived !== viewingArchivedEditRequests) return;
+          const requests = await ApiClient.getEditRequests();
           adminEditRequests = Array.isArray(requests) ? requests : [];
           renderEditRequests();
-          if (!requestedArchived) {
-            updatePendingRequestCounts(adminEditRequests.filter((request) => normalizeText(request.status) === 'pending').length);
-          }
-          if (toggleArchivedEditRequestsBtn) {
-            toggleArchivedEditRequestsBtn.innerHTML = viewingArchivedEditRequests
-              ? '<i class="fas fa-list" aria-hidden="true"></i> View Active'
-              : '<i class="fas fa-box-archive" aria-hidden="true"></i> View Archived';
-            toggleArchivedEditRequestsBtn.setAttribute("aria-pressed", String(viewingArchivedEditRequests));
-          }
+          updatePendingRequestCounts(adminEditRequests.filter((request) => normalizeText(request.status) === 'pending').length);
         } catch (error) {
-          if (requestedArchived !== viewingArchivedEditRequests) return;
           adminEditRequests = [];
           renderEditRequests();
           await showMessageDialog(error.message || "Unable to load edit requests.", "Request Center Error");
@@ -7116,11 +7093,6 @@
       });
 
       refreshEditRequestsBtn?.addEventListener("click", loadAdminEditRequests);
-      toggleArchivedEditRequestsBtn?.addEventListener("click", async () => {
-        viewingArchivedEditRequests = !viewingArchivedEditRequests;
-        editRequestsStatusFilter.value = viewingArchivedEditRequests ? "" : "pending";
-        await loadAdminEditRequests();
-      });
       document.getElementById('requestStatusTabs')?.addEventListener('click', (event) => {
         const button = event.target.closest('[data-request-status]');
         if (!button) return;
@@ -7138,8 +7110,6 @@
         if (action === "approve-request") decideEditRequest(requestId, "approve");
         if (action === "reject-request") decideEditRequest(requestId, "reject");
         if (action === "delete-request") deleteEditRequest(requestId);
-        if (action === "restore-request") restoreEditRequest(requestId);
-        if (action === "delete-archived-request") deleteArchivedEditRequest(requestId, btn);
       });
 
       // Delegated fallback keeps navigation available if the sidebar is redrawn.
@@ -7162,7 +7132,6 @@
         button.addEventListener("click", () => {
           const targetId = button.getAttribute("data-target");
           if (targetId === 'editRequestsCard') {
-            viewingArchivedEditRequests = false;
             editRequestsStatusFilter.value = 'pending';
           }
           if (targetId) showCard(targetId);

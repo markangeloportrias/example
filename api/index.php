@@ -1335,15 +1335,15 @@ try {
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'delete') {
             if (!in_array($user['role'], ['admin', 'instructor', 'student'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
-            $requestStmt = $pdo->prepare('SELECT student_id FROM edit_requests WHERE id=? AND archived_at IS NOT NULL');
+            $requestStmt = $pdo->prepare('SELECT student_id FROM edit_requests WHERE id=?');
             $requestStmt->execute([$id]);
             $request = $requestStmt->fetch();
-            if (!$request) respond(['ok'=>false,'message'=>'Archived edit request not found.'],404);
+            if (!$request) respond(['ok'=>false,'message'=>'Edit request not found.'],404);
             if ($user['role'] === 'student' && $user['user_uid'] !== (string)$request['student_id']) respond(['ok'=>false,'message'=>'Access denied.'],403);
             $pdo->beginTransaction();
             try {
                 $pdo->prepare('DELETE FROM notification_history WHERE request_id=?')->execute([$id]);
-                $stmt = $pdo->prepare('DELETE FROM edit_requests WHERE id=? AND archived_at IS NOT NULL');
+                $stmt = $pdo->prepare('DELETE FROM edit_requests WHERE id=?');
                 $stmt->execute([$id]);
                 if ($stmt->rowCount() > 0) audit($pdo,$user,'delete_permanently','edit_request',$id);
                 $pdo->commit();
