@@ -2909,7 +2909,7 @@
     try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/restore',{method:'PATCH',body:'{}'});}catch(error){return {ok:false,message:error.message};}
   };
   ApiClient.permanentlyDeleteEditRequest = async function (requestId) {
-    try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/delete',{method:'PATCH',body:'{}'});}catch(error){return {ok:false,message:error.message};}
+    try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId),{method:'DELETE'});}catch(error){return {ok:false,message:error.message};}
   };
   ApiClient.cancelEditRequest = async function (requestId, request) {
     return ApiClient.archiveEditRequest(requestId, request);
