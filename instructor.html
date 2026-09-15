@@ -2766,10 +2766,10 @@
         showOptionMessage("Request Rejected", `The request for case ${normalizeCaseNo(caseNo) || "selected case"} was rejected.`);
       }
 
-      async function deleteNotificationRequest(requestId, caseNo) {
-        const result = await ApiClient.archiveEditRequest(requestId);
+      async function deleteNotificationRequest(request) {
+        const result = await ApiClient.permanentlyDeleteEditRequest(request);
         if (!result || !result.ok) {
-          showOptionMessage("Archive Failed", (result && result.message) || "Unable to archive this edit request.");
+          showOptionMessage("Delete Failed", (result && result.message) || "Unable to delete this edit request.");
           return;
         }
         await Promise.all([renderEditNotifications(), renderEditRequestsList()]);
@@ -2970,7 +2970,6 @@
                      <button class="mini-btn" data-view-request-id="${req.id}" data-student-id="${req.studentId}" data-procedure="${req.type}" data-case-no="${caseNum}">View Record</button>
                      <button class="mini-btn" data-approve-id="${req.id}" data-case-no="${caseNum}">Allow Correction</button>
                      <button class="mini-btn danger" data-reject-id="${req.id}" data-case-no="${caseNum}">Deny Correction</button>
-                      <button class="mini-btn danger" data-delete-id="${req.id}" data-case-no="${caseNum}"><i class="fas fa-trash"></i> Delete</button>
                    </div>
                  </div>
                `;
@@ -2994,6 +2993,7 @@
 
       let instructorRequestFilter = "pending";
       let instructorRequestRenderVersion = 0;
+      let instructorEditRequests = [];
       function applyInstructorRequestFilter() {
         const rows = Array.from(document.querySelectorAll('#edit-requests-list .request-item'));
         let visible = 0;
@@ -3021,6 +3021,7 @@
         console.log('[INSTRUCTOR_DEBUG] renderEditRequestsList() called');
         const requests = await ApiClient.getEditRequests();
         if (version !== instructorRequestRenderVersion) return;
+        instructorEditRequests = requests;
         const pendingCount = requests.filter((request) => {
           const caseNo = normalizeCaseNo(request.caseNumbers?.[0]);
           const status = request.caseStatuses?.[caseNo] || request.status || "pending";
@@ -3053,7 +3054,7 @@
             <span>Actions</span>
           </div>
         `;
-        for (const req of requests) {
+        for (const [requestIndex, req] of requests.entries()) {
           const studentResult =
             ApiClient && ApiClient.getStudent
               ? await ApiClient.getStudent(req.studentId)
@@ -3106,11 +3107,8 @@
                   <button class="request-reject-btn" data-reject-edit-request="${req.id}" data-case-no="${caseNum}">
                     <i class="fas fa-times"></i> Reject
                   </button>
-                  <button class="request-delete-btn" data-delete-edit-request="${req.id}" data-case-no="${caseNum}">
-                    <i class="fas fa-trash"></i> Delete
-                  </button>
                 </div>` : ""}
-                ${!isPending ? `<div class="request-item-actions"><button class="request-delete-btn" data-delete-edit-request="${req.id}" data-case-no="${caseNum}"><i class="fas fa-trash"></i> Delete</button></div>` : ""}
+                ${!isPending ? `<div class="request-item-actions"><button class="request-delete-btn" data-delete-edit-request="${req.id}" data-request-index="${requestIndex}" data-case-no="${caseNum}"><i class="fas fa-trash"></i> Delete</button></div>` : ""}
               </div>
             `;
             if (version === instructorRequestRenderVersion) editRequestsList.appendChild(item);
@@ -3681,9 +3679,10 @@
         const deleteBtn = e.target.closest("button[data-delete-edit-request]");
         if (deleteBtn) {
           const id = deleteBtn.getAttribute("data-delete-edit-request");
-          const caseNo = deleteBtn.getAttribute("data-case-no") || "";
-          const confirmed = await showOptionConfirm("Delete notification", "Remove this request notification from the Request Center?", "Delete", "Cancel");
-          if (confirmed) await deleteNotificationRequest(id, caseNo);
+          const requestIndex = Number.parseInt(deleteBtn.getAttribute("data-request-index"), 10);
+          const request = Number.isInteger(requestIndex) ? instructorEditRequests[requestIndex] : null;
+          const confirmed = await showOptionConfirm("Delete Request", "Permanently delete this approved or rejected request?", "Delete", "Cancel");
+          if (confirmed) await deleteNotificationRequest(request || { id });
         }
       });
 
