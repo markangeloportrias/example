@@ -6574,14 +6574,9 @@
           { title: approving ? "Approve Edit Request" : "Reject Edit Request", confirmLabel: approving ? "Approve" : "Reject" },
         );
         if (!confirmed) return;
-        let remarks = "";
-        if (!approving) {
-          remarks = await showTextPrompt("Reason for rejection:", "", { title: "Rejection Remarks", confirmLabel: "Reject" });
-          if (remarks === null) return;
-        }
         const result = approving
           ? await ApiClient.approveEditRequest(request)
-          : await ApiClient.rejectEditRequest(request, remarks);
+          : await ApiClient.rejectEditRequest(request, "");
         if (!result?.ok) {
           await showMessageDialog(result?.message || `Unable to ${decision} request.`, "Request Update Failed");
           return;
@@ -6589,7 +6584,10 @@
         await loadAdminEditRequests();
         await loadAdminNotifications();
         refreshOverview();
-        if (approving) await showMessageDialog("The edit request was approved successfully.", "Approval Successful");
+        await showMessageDialog(
+          approving ? "The edit request was approved successfully." : "The edit request was rejected successfully.",
+          approving ? "Approval Successful" : "Rejection Successful",
+        );
       }
 
       function deleteEditRequest(request) {
