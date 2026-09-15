@@ -2773,6 +2773,7 @@
           return;
         }
         await Promise.all([renderEditNotifications(), renderEditRequestsList()]);
+        showOptionMessage("Request Deleted", "The request was deleted successfully.");
       }
 
       function closeRejectPane() {

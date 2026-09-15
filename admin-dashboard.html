@@ -6589,6 +6589,7 @@
         await loadAdminEditRequests();
         await loadAdminNotifications();
         refreshOverview();
+        if (approving) await showMessageDialog("The edit request was approved successfully.", "Approval Successful");
       }
 
       function deleteEditRequest(request) {
