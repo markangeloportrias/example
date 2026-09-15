@@ -168,84 +168,6 @@ function indexExists(PDO $pdo, string $table, string $index): bool
     return (bool)$stmt->fetchColumn();
 }
 
-function uniqueIndexExists(PDO $pdo, string $table, array $columns): bool
-{
-    $stmt = $pdo->prepare('SELECT INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND NON_UNIQUE=0 ORDER BY INDEX_NAME,SEQ_IN_INDEX');
-    $stmt->execute([$table]);
-    $indexes = [];
-    foreach ($stmt->fetchAll() as $row) {
-        $indexes[(string)$row['INDEX_NAME']][] = (string)$row['COLUMN_NAME'];
-    }
-    foreach ($indexes as $indexColumns) {
-        if ($indexColumns === $columns) return true;
-    }
-    return false;
-}
-
-function deduplicateImportedRows(PDO $pdo, string $table, array $identityColumns, array $references = []): void
-{
-    if (!portalTableExists($pdo, $table)) return;
-    foreach (array_merge(['id'], $identityColumns) as $column) {
-        if (!columnExists($pdo, $table, $column)) return;
-    }
-
-    $hasArchivedAt = columnExists($pdo, $table, 'archived_at');
-    $selectedColumns = implode(',', array_map(static fn(string $column): string => "`$column`", array_merge(['id'], $identityColumns)));
-    $order = $hasArchivedAt ? 'CASE WHEN archived_at IS NULL THEN 0 ELSE 1 END,id' : 'id';
-    $rows = $pdo->query("SELECT $selectedColumns FROM `$table` ORDER BY $order")->fetchAll();
-    $seen = [];
-    $delete = $pdo->prepare("DELETE FROM `$table` WHERE id=?");
-
-    foreach ($rows as $row) {
-        $key = json_encode(array_map(static fn(string $column) => $row[$column], $identityColumns), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if (!array_key_exists($key, $seen)) {
-            $seen[$key] = (int)$row['id'];
-            continue;
-        }
-
-        $canonicalId = $seen[$key];
-        $duplicateId = (int)$row['id'];
-        foreach ($references as [$referenceTable, $referenceColumn]) {
-            if (!portalTableExists($pdo, $referenceTable) || !columnExists($pdo, $referenceTable, $referenceColumn)) continue;
-            $update = $pdo->prepare("UPDATE `$referenceTable` SET `$referenceColumn`=? WHERE `$referenceColumn`=?");
-            $update->execute([$canonicalId, $duplicateId]);
-        }
-        $delete->execute([$duplicateId]);
-    }
-}
-
-function repairImportedBackupDuplicates(PDO $pdo): void
-{
-    $pdo->beginTransaction();
-    try {
-        // String-keyed parent tables can be safely cleaned first because their
-        // related tables reference the same public identifier, not this row ID.
-        deduplicateImportedRows($pdo, 'students', ['student_id']);
-        deduplicateImportedRows($pdo, 'instructor_accounts', ['account_uid']);
-        deduplicateImportedRows($pdo, 'procedures', ['procedure_key']);
-        deduplicateImportedRows($pdo, 'student_block_assignments', ['student_id', 'school_year_id']);
-        deduplicateImportedRows($pdo, 'edit_permissions', ['student_id', 'procedure_key']);
-        deduplicateImportedRows($pdo, 'case_records', ['student_id', 'procedure_key', 'academic_year', 'case_no', 'patient_name', 'date_time_performed'], [
-            ['case_comments', 'case_id'],
-            ['school_year_archive_records', 'case_record_id'],
-        ]);
-        deduplicateImportedRows($pdo, 'edit_requests', ['student_id', 'procedure_key', 'case_numbers', 'requested_at'], [
-            ['notification_history', 'request_id'],
-        ]);
-        deduplicateImportedRows($pdo, 'notification_history', ['event_type', 'student_id', 'procedure_key', 'case_no', 'message', 'created_at']);
-        deduplicateImportedRows($pdo, 'chat_messages', ['student_id', 'instructor_id', 'sender_role', 'sender_name', 'message', 'created_at']);
-        deduplicateImportedRows($pdo, 'audit_trail', ['actor_role', 'actor_uid', 'action_name', 'entity_type', 'entity_uid', 'details', 'created_at']);
-        $pdo->commit();
-    } catch (Throwable $error) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
-        throw $error;
-    }
-
-    if (portalTableExists($pdo, 'students') && !uniqueIndexExists($pdo, 'students', ['student_id'])) {
-        $pdo->exec('ALTER TABLE students ADD UNIQUE KEY uq_students_student_id (student_id)');
-    }
-}
-
 function ensureEnrollmentHistorySchema(PDO $pdo): void
 {
     if (!columnExists($pdo, 'student_block_assignments', 'school_year_id')) {
@@ -408,7 +330,6 @@ runPortalStartup($pdo, static function () use ($pdo): void {
     ensureSecurityTables($pdo);
     ensureStudentProfileFields($pdo);
     ensureEditRequestDismissalFields($pdo);
-    repairImportedBackupDuplicates($pdo);
     ensureEnrollmentHistorySchema($pdo);
     migrateLegacyCredentials($pdo);
     retireLegacyCredentialProcedures($pdo);
