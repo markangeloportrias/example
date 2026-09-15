@@ -151,6 +151,16 @@ function ensureStudentProfileFields(PDO $pdo): void
     }
 }
 
+function ensureEditRequestDismissalFields(PDO $pdo): void
+{
+    if (!columnExists($pdo, 'edit_requests', 'reviewer_dismissed_at')) {
+        $pdo->exec('ALTER TABLE edit_requests ADD COLUMN reviewer_dismissed_at DATETIME NULL AFTER archived_at');
+    }
+    if (!columnExists($pdo, 'edit_requests', 'student_dismissed_at')) {
+        $pdo->exec('ALTER TABLE edit_requests ADD COLUMN student_dismissed_at DATETIME NULL AFTER reviewer_dismissed_at');
+    }
+}
+
 function indexExists(PDO $pdo, string $table, string $index): bool
 {
     $stmt = $pdo->prepare('SELECT 1 FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND INDEX_NAME=?');
@@ -319,6 +329,7 @@ runPortalStartup($pdo, static function () use ($pdo): void {
     ensureAuditTrailTable($pdo);
     ensureSecurityTables($pdo);
     ensureStudentProfileFields($pdo);
+    ensureEditRequestDismissalFields($pdo);
     ensureEnrollmentHistorySchema($pdo);
     migrateLegacyCredentials($pdo);
     retireLegacyCredentialProcedures($pdo);

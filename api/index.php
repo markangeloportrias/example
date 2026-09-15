@@ -1261,8 +1261,10 @@ try {
         if ($method === 'GET') {
             $archived = ($_GET['archived'] ?? '0') === '1';
             $where = $user['role'] === 'student'
-                ? ' AND student_id=?'
-                : ($archived ? ' AND archived_at IS NOT NULL' : ' AND archived_at IS NULL');
+                ? ' AND student_id=? AND student_dismissed_at IS NULL'
+                : ($archived
+                    ? ' AND archived_at IS NOT NULL'
+                    : ' AND archived_at IS NULL AND reviewer_dismissed_at IS NULL');
             $stmt = $pdo->prepare('SELECT * FROM edit_requests WHERE 1=1' . $where . ' ORDER BY requested_at DESC');
             $stmt->execute($user['role'] === 'student' ? [$user['user_uid']] : []);
             respond(['ok' => true, 'requests' => $stmt->fetchAll()]);
@@ -1322,7 +1324,9 @@ try {
                     ? "UPDATE edit_requests SET status='rejected', rejection_remarks=?, rejected_at=NOW() WHERE id=? AND archived_at IS NULL"
                     : ($action === 'restore'
                         ? 'UPDATE edit_requests SET archived_at=NULL WHERE id=? AND archived_at IS NOT NULL'
-                        : 'UPDATE edit_requests SET archived_at=NOW() WHERE id=? AND archived_at IS NULL'));
+                        : ($user['role'] === 'student'
+                            ? 'UPDATE edit_requests SET student_dismissed_at=NOW() WHERE id=? AND student_dismissed_at IS NULL'
+                            : 'UPDATE edit_requests SET reviewer_dismissed_at=NOW() WHERE id=? AND reviewer_dismissed_at IS NULL')));
             $sql = str_replace('WHERE id=?', "WHERE $requestWhere", $sql) . ' LIMIT 1';
             $params = $action === 'reject' ? array_merge([$data['remarks'] ?? ''], $requestParams) : $requestParams;
             $stmt=$pdo->prepare($sql);$stmt->execute($params);
@@ -1343,7 +1347,7 @@ try {
             respond(['ok'=>$changed, 'message'=>$changed ? '' : 'The correction request was not changed. Refresh the list and try again.']);
         }
         if ($method === 'PATCH' && (($id !== '' && $action === 'delete') || ($id === 'delete' && $action === ''))) {
-            if (!in_array($user['role'], ['admin', 'instructor', 'student'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
+            if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
             $deleteByDetails = $id === 'delete' && $action === '';
             if ($deleteByDetails) {
                 $requestIdentity = is_array($data['request_identity'] ?? null) ? $data['request_identity'] : [];
@@ -1368,10 +1372,10 @@ try {
             $pdo->beginTransaction();
             try {
                 if ($deleteByDetails) {
-                    $stmt = $pdo->prepare("UPDATE edit_requests SET archived_at=NOW() WHERE student_id=? AND procedure_key=? AND case_numbers=? AND requested_at=? AND status IN ('approved','rejected') AND archived_at IS NULL LIMIT 1");
+                    $stmt = $pdo->prepare("UPDATE edit_requests SET reviewer_dismissed_at=NOW() WHERE student_id=? AND procedure_key=? AND case_numbers=? AND requested_at=? AND status IN ('approved','rejected') AND reviewer_dismissed_at IS NULL LIMIT 1");
                     $stmt->execute([(string)$requestIdentity['student_id'], (string)$requestIdentity['procedure_key'], $caseNumbers, (string)$requestIdentity['requested_at']]);
                 } else {
-                    $stmt = $pdo->prepare('UPDATE edit_requests SET archived_at=NOW() WHERE id=? AND status IN (\'approved\',\'rejected\') AND archived_at IS NULL LIMIT 1');
+                    $stmt = $pdo->prepare('UPDATE edit_requests SET reviewer_dismissed_at=NOW() WHERE id=? AND status IN (\'approved\',\'rejected\') AND reviewer_dismissed_at IS NULL LIMIT 1');
                     $stmt->execute([$deleteId]);
                 }
                 if ($stmt->rowCount() > 0) audit($pdo,$user,'dismiss','edit_request',$deleteId);
