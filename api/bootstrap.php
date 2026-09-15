@@ -20,14 +20,17 @@ if ($requestOrigin !== '' && $allowedOrigin !== '' && hash_equals($allowedOrigin
     header('Vary: Origin');
 }
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+// Permanent deletion stays disabled except for the explicit Edit Requests route.
+$requestPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '';
+$isEditRequestDelete = (bool)preg_match('#/api/edit-requests/[^/]+/?$#', $requestPath);
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && !$isEditRequestDelete) {
     http_response_code(405);
     echo json_encode(['ok' => false, 'message' => 'Permanent deletion is disabled. Use an archive endpoint.']);
     exit;
