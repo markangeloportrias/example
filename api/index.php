@@ -1333,7 +1333,7 @@ try {
             $pdo->commit();
             respond(['ok'=>$changed, 'message'=>$changed ? '' : 'The correction request was not changed. Refresh the list and try again.']);
         }
-        if ($method === 'DELETE' && $id !== '') {
+        if ($method === 'PATCH' && $id !== '' && $action === 'delete') {
             if (!in_array($user['role'], ['admin', 'instructor', 'student'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
             $requestStmt = $pdo->prepare('SELECT student_id FROM edit_requests WHERE id=?');
             $requestStmt->execute([$id]);
