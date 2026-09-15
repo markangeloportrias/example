@@ -2857,15 +2857,15 @@
         });
       }
 
-      async function handleRejectRequest(requestId, caseNo) {
-        const request = (await getPendingEditRequests()).find(
-          (item) => String(item.id) === String(requestId),
-        );
+      async function handleRejectRequest(requestOrId, caseNo) {
+        const request = requestOrId && typeof requestOrId === "object"
+          ? requestOrId
+          : (await getPendingEditRequests()).find((item) => String(item.id) === String(requestOrId));
         rejectRemarksInput.value = "";
         const remarks = await promptRejectRemarks(request, caseNo);
         if (remarks === null) return;
-        await rejectEditRequest(requestId, caseNo, remarks);
-        clearCaseComment(requestId, caseNo);
+        await rejectEditRequest(request || requestOrId, caseNo, remarks);
+        clearCaseComment(request?.id || requestOrId, caseNo);
       }
 
       async function handleTableComment(rec) {
@@ -2931,7 +2931,8 @@
         }
 
         pageList.innerHTML = "";
-        for (const req of pending) {
+        instructorPendingEditRequests = pending;
+        for (const [requestIndex, req] of pending.entries()) {
           const studentResult =
             ApiClient && ApiClient.getStudent
               ? await ApiClient.getStudent(req.studentId)
@@ -2968,8 +2969,8 @@
                    </div>
                    <div class="mini-actions" style="margin-top: 12px; gap: 8px;">
                      <button class="mini-btn" data-view-request-id="${req.id}" data-student-id="${req.studentId}" data-procedure="${req.type}" data-case-no="${caseNum}">View Record</button>
-                     <button class="mini-btn" data-approve-id="${req.id}" data-case-no="${caseNum}">Allow Correction</button>
-                     <button class="mini-btn danger" data-reject-id="${req.id}" data-case-no="${caseNum}">Deny Correction</button>
+                     <button class="mini-btn" data-approve-id="${req.id}" data-request-index="${requestIndex}" data-case-no="${caseNum}">Allow Correction</button>
+                     <button class="mini-btn danger" data-reject-id="${req.id}" data-request-index="${requestIndex}" data-case-no="${caseNum}">Deny Correction</button>
                    </div>
                  </div>
                `;
@@ -2994,6 +2995,7 @@
       let instructorRequestFilter = "pending";
       let instructorRequestRenderVersion = 0;
       let instructorEditRequests = [];
+      let instructorPendingEditRequests = [];
       function applyInstructorRequestFilter() {
         const rows = Array.from(document.querySelectorAll('#edit-requests-list .request-item'));
         let visible = 0;
@@ -3101,10 +3103,10 @@
                   <div>${when}</div>
                 </div>
                 ${isPending ? `<div class="request-item-actions">
-                  <button class="request-approve-btn" data-approve-edit-request="${req.id}" data-case-no="${caseNum}">
+                  <button class="request-approve-btn" data-approve-edit-request="${req.id}" data-request-index="${requestIndex}" data-case-no="${caseNum}">
                     <i class="fas fa-check"></i> Approve
                   </button>
-                  <button class="request-reject-btn" data-reject-edit-request="${req.id}" data-case-no="${caseNum}">
+                  <button class="request-reject-btn" data-reject-edit-request="${req.id}" data-request-index="${requestIndex}" data-case-no="${caseNum}">
                     <i class="fas fa-times"></i> Reject
                   </button>
                 </div>` : ""}
@@ -3636,16 +3638,20 @@
         const approveBtn = e.target.closest("button[data-approve-id]");
         if (approveBtn) {
           const id = approveBtn.getAttribute("data-approve-id");
+          const requestIndex = Number.parseInt(approveBtn.getAttribute("data-request-index"), 10);
+          const request = Number.isInteger(requestIndex) ? instructorPendingEditRequests[requestIndex] : null;
           const caseNo = approveBtn.getAttribute("data-case-no") || "";
-          approveEditRequest(id, caseNo);
+          approveEditRequest(request || { id }, caseNo);
           return;
         }
 
         const rejectBtn = e.target.closest("button[data-reject-id]");
         if (rejectBtn) {
           const id = rejectBtn.getAttribute("data-reject-id");
+          const requestIndex = Number.parseInt(rejectBtn.getAttribute("data-request-index"), 10);
+          const request = Number.isInteger(requestIndex) ? instructorPendingEditRequests[requestIndex] : null;
           const caseNo = rejectBtn.getAttribute("data-case-no") || "";
-          handleRejectRequest(id, caseNo);
+          handleRejectRequest(request || { id }, caseNo);
           return;
         }
 
@@ -3663,16 +3669,20 @@
         const approveBtn = e.target.closest("button[data-approve-edit-request]");
         if (approveBtn) {
           const id = approveBtn.getAttribute("data-approve-edit-request");
+          const requestIndex = Number.parseInt(approveBtn.getAttribute("data-request-index"), 10);
+          const request = Number.isInteger(requestIndex) ? instructorEditRequests[requestIndex] : null;
           const caseNo = approveBtn.getAttribute("data-case-no") || "";
-          approveEditRequest(id, caseNo);
+          approveEditRequest(request || { id }, caseNo);
           return;
         }
 
         const rejectBtn = e.target.closest("button[data-reject-edit-request]");
         if (rejectBtn) {
           const id = rejectBtn.getAttribute("data-reject-edit-request");
+          const requestIndex = Number.parseInt(rejectBtn.getAttribute("data-request-index"), 10);
+          const request = Number.isInteger(requestIndex) ? instructorEditRequests[requestIndex] : null;
           const caseNo = rejectBtn.getAttribute("data-case-no") || "";
-          handleRejectRequest(id, caseNo);
+          handleRejectRequest(request || { id }, caseNo);
           return;
         }
 
