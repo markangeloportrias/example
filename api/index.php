@@ -489,10 +489,8 @@ try {
         }
         if ($method === 'POST' && $id === '') {
             if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
-            requireFields($data, ['student_id', 'student_name', 'password', 'parent_name', 'contact_number']); // Password is the student's initial login credential.
+            requireFields($data, ['student_id', 'student_name', 'password']); // Password is the student's initial login credential.
             if (!credentialIsStrong((string)$data['password'], 6)) respond(['ok'=>false,'message'=>'Initial password must contain at least 6 characters.'],422);
-            validateContactNumberInput($data['contact_number'] ?? null);
-            validateContactNumberInput($data['parent_contact'] ?? null, 'Parent/Guardian contact');
             // Account creation and enrollment must succeed together. Previously
             // a failed second HTTP request left an account outside the roster.
             $pdo->beginTransaction();
@@ -507,7 +505,7 @@ try {
                 }
             }
             $stmt = $pdo->prepare('INSERT INTO students (student_id, student_name, password, parent_name, contact_number, parent_contact) VALUES (?, ?, ?, ?, ?, ?)');
-            $stmt->execute([$data['student_id'], $data['student_name'], password_hash((string)$data['password'], PASSWORD_DEFAULT), $data['parent_name'] ?? null, $data['contact_number'] ?? null, $data['parent_contact'] ?? null]);
+            $stmt->execute([$data['student_id'], $data['student_name'], password_hash((string)$data['password'], PASSWORD_DEFAULT), '', '', null]);
             if ($block) {
                 $assignment = $pdo->prepare('INSERT INTO student_block_assignments (student_id,block_id,school_year_id,assigned_by) VALUES (?,?,?,?)');
                 $assignment->execute([$data['student_id'], $block['id'], $block['school_year_id'], $user['user_uid']]);

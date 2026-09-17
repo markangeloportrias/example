@@ -5203,24 +5203,6 @@
               type: "password",
               placeholder: "Create an initial password",
             },
-            {
-              id: "instructorModalStudentParent",
-              key: "parent_name",
-              label: "Parent/Guardian",
-              placeholder: "Parent name",
-            },
-            {
-              id: "instructorModalStudentContact",
-              key: "contact_number",
-              label: "Contact",
-              placeholder: "Contact number",
-            },
-            {
-              id: "instructorModalStudentParentContact",
-              key: "parent_contact",
-              label: "Parent/Guardian Contact",
-              placeholder: "11-digit contact number",
-            },
           ],
           onSubmit: async (values) => submitInstructorNewStudentInBlock(values),
         });
@@ -5997,18 +5979,6 @@
         const initialPassword = String(payload.password || "").trim();
         if (!initialPassword) {
           return { ok: false, message: "Create an initial password for the student." };
-        }
-        if (!String(payload.parent_name || "").trim()) {
-          return { ok: false, message: "Enter the parent or guardian name." };
-        }
-        if (!String(payload.contact_number || "").trim()) {
-          return { ok: false, message: "Enter the student's contact number." };
-        }
-        if (!/^\d{11}$/.test(String(payload.contact_number).trim())) {
-          return { ok: false, message: "Contact number must contain exactly 11 digits." };
-        }
-        if (payload.parent_contact && !/^\d{11}$/.test(String(payload.parent_contact).trim())) {
-          return { ok: false, message: "Parent/Guardian contact must contain exactly 11 digits." };
         }
         const result = await ApiClient.registerStudentInBlock(
           instructorStudentsNav.blockId,

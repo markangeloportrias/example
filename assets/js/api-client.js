@@ -782,14 +782,8 @@
       if (!/^\d{6}$/.test(id)) {
         return { ok: false, message: 'Student ID must be exactly 6 digits.' };
       }
-      if (!name || !pwd || !pName || !pContact) {
-        return { ok: false, message: 'All student fields are required.' };
-      }
-      if (!/^\d{11}$/.test(pContact)) {
-        return { ok: false, message: 'Contact number must contain exactly 11 digits.' };
-      }
-      if (pParentContact && !/^\d{11}$/.test(pParentContact)) {
-        return { ok: false, message: 'Parent/Guardian contact must contain exactly 11 digits.' };
+      if (!name || !pwd) {
+        return { ok: false, message: 'Student ID, full name, and password are required.' };
       }
 
       var students = getStudents();
