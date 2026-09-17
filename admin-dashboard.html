@@ -3309,7 +3309,7 @@
               <div class="admin-student-details">
                 <div class="admin-student-detail"><span>Student ID</span><strong>${escapeHtml(student.student_id || activeCasesStudentId || "-")}</strong></div>
                 <div class="admin-student-detail"><span>Contact Number</span><strong>${escapeHtml(student.contact_number || "-")}</strong></div>
-                <div class="admin-student-detail"><span>Parent / Guardian</span><strong>${escapeHtml(student.parent_name || "-")}</strong></div>
+                <div class="admin-student-detail"><span>Parent Name / Contact</span><strong>${escapeHtml(`${student.parent_name || "-"} / ${student.parent_contact || "-"}`)}</strong></div>
                 <div class="admin-student-detail"><span>Academic Year</span><strong>${escapeHtml(activeCasesYear || student.registered_school_year || student.active_school_year || "-")}</strong></div>
                 <div class="admin-student-detail"><span>Block</span><strong>${escapeHtml(activeCasesBlockLabel || student.block_label || "-")}</strong></div>
                 <div class="admin-student-detail"><span>Total Cases</span><strong>${Number(totalCases || 0)}</strong></div>

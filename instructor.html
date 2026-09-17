@@ -1091,7 +1091,7 @@
                       <strong id="yearlyStudentProfileContact">Not provided</strong>
                     </div>
                     <div>
-                      <span>Parent / Guardian</span>
+                      <span>Parent Name / Contact</span>
                       <strong id="yearlyStudentProfileGuardian">Not provided</strong>
                     </div>
                   </div>
@@ -5384,7 +5384,9 @@
           yearlyStudentProfileContact.textContent = student.contact_number || "Not provided";
         }
         if (yearlyStudentProfileGuardian) {
-          yearlyStudentProfileGuardian.textContent = student.parent_name || "Not provided";
+          const parentName = student.parent_name || "Not provided";
+          const parentContact = student.parent_contact || "Not provided";
+          yearlyStudentProfileGuardian.textContent = `${parentName} / ${parentContact}`;
         }
         if (yearlyStudentProfileInitials) {
           yearlyStudentProfileInitials.textContent = initials;
