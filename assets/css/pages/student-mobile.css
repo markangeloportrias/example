@@ -112,7 +112,44 @@
   html body.role-student .student-hero-actions { display: flex !important; flex-direction: column !important; align-items: stretch !important; }
   html body.role-student .student-hero-action { width: 100% !important; min-height: 44px !important; white-space: normal !important; }
 
-  html body.role-student .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html body.role-student #dashboardProgressSection .stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+  }
+  html body.role-student #dashboardProgressSection .stat-card-h {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 14px !important;
+    gap: 10px !important;
+  }
+  html body.role-student #dashboardProgressSection .stat-card-h:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+  html body.role-student #dashboardProgressSection .stat-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px;
+    width: 100%;
+  }
+  html body.role-student #dashboardProgressSection .stat-name {
+    min-height: 2.6em !important;
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+    letter-spacing: .02em !important;
+    overflow-wrap: normal;
+  }
+  html body.role-student #dashboardProgressSection .stat-sub {
+    display: flex !important;
+    justify-content: space-between;
+    font-size: 10px !important;
+    margin-top: auto !important;
+  }
+  html body.role-student #dashboardProgressSection .stat-progress {
+    width: 100%;
+    margin: 0;
+  }
   html body.role-student .stat-card-h { min-width: 0 !important; gap: 10px !important; }
   html body.role-student .stat-info { flex: 1; min-width: 0 !important; }
   html body.role-student .stat-name { white-space: normal !important; overflow-wrap: anywhere; }
@@ -131,6 +168,5 @@
 }
 
 @media screen and (max-width: 480px) {
-  html body.role-student .stats-row { grid-template-columns: minmax(0, 1fr) !important; }
   html body.role-student .summary-student-details { grid-template-columns: minmax(0, 1fr) !important; }
 }
