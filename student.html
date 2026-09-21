@@ -1758,9 +1758,18 @@
           const button = document.createElement("button");
           const name = account.display_name || account.username || "Instructor";
           const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("") || "IN";
+          const profilePhoto = String(account.profile_photo || "").trim();
           button.type = "button";
           button.className = `chat-instructor-item${String(account.id) === String(selectedId) ? " active" : ""}`;
-          button.innerHTML = `<span class="chat-instructor-avatar">${escapeHtml(initials)}</span><span><span class="chat-instructor-name">${escapeHtml(name)}</span><span class="chat-instructor-role">${escapeHtml(account.role_title || "Clinical Instructor")}</span></span><i class="fas fa-chevron-right chat-instructor-chevron" aria-hidden="true"></i>`;
+          button.innerHTML = `<span class="chat-instructor-avatar">${profilePhoto ? `<img src="${escapeHtml(profilePhoto)}" alt="${escapeHtml(name)} profile photo" style="width:100%;height:100%;border-radius:inherit;object-fit:cover;display:block" />` : escapeHtml(initials)}</span><span><span class="chat-instructor-name">${escapeHtml(name)}</span><span class="chat-instructor-role">${escapeHtml(account.role_title || "Clinical Instructor")}</span></span><i class="fas fa-chevron-right chat-instructor-chevron" aria-hidden="true"></i>`;
+          if (profilePhoto) {
+            const avatar = button.querySelector(".chat-instructor-avatar");
+            const avatarImage = avatar?.querySelector("img");
+            avatarImage?.addEventListener("error", () => {
+              avatarImage.remove();
+              if (avatar) avatar.textContent = initials;
+            }, { once: true });
+          }
           button.addEventListener("click", () => {
             setStoredChatInstructorId(account.id);
             mobileChatInstructorSelected = true;
@@ -1798,6 +1807,7 @@
               id: account.id || account.username || `instructor_${Math.random().toString(36).slice(2, 7)}`,
               username: account.username || "instructor",
               display_name: account.display_name || account.username || "Instructor",
+              profile_photo: account.profile_photo || "",
               role_title: account.role_title || account.role || "Clinical Instructor",
             }));
 
