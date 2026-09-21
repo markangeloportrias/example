@@ -119,22 +119,22 @@
   }
   html body.role-student #dashboardProgressSection .stat-card-h {
     display: grid !important;
-    grid-template-columns: 28px minmax(0, 1fr) !important;
-    grid-template-rows: auto auto auto auto !important;
+    grid-template-columns: 24px minmax(0, 1fr) !important;
+    grid-template-rows: auto auto auto !important;
     height: auto !important;
-    min-height: 112px !important;
+    min-height: 100px !important;
     align-items: center !important;
     align-content: start;
     padding: 10px !important;
-    gap: 5px 8px !important;
+    gap: 8px 6px !important;
   }
   html body.role-student #dashboardProgressSection .stat-icon-wrap {
     position: static !important;
     grid-column: 1 !important;
     grid-row: 1 !important;
-    width: 28px !important;
-    min-width: 28px !important;
-    height: 28px !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
     margin: 0 !important;
     transform: none !important;
   }
@@ -145,7 +145,7 @@
     max-width: 100%;
   }
   html body.role-student #dashboardProgressSection .stat-card-h:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
   html body.role-student #dashboardProgressSection .stat-info {
     display: contents !important;
@@ -160,23 +160,34 @@
     overflow-wrap: normal;
   }
   html body.role-student #dashboardProgressSection .stat-num {
-    grid-column: 1 / -1 !important;
-    grid-row: 2 !important;
-    margin: 0 !important;
-    font-size: 20px !important;
-    line-height: 1.1 !important;
+    display: none !important;
   }
   html body.role-student #dashboardProgressSection .stat-sub {
     grid-column: 1 / -1 !important;
-    grid-row: 3 !important;
+    grid-row: 2 !important;
     display: flex !important;
     justify-content: space-between;
     font-size: 10px !important;
     margin: 0 !important;
   }
+  html body.role-student #dashboardProgressSection .stat-sub > span:first-child {
+    display: none !important;
+  }
+  html body.role-student #dashboardProgressSection .stat-sub .stat-target {
+    position: static !important;
+    margin: 0 !important;
+    font-size: 11px !important;
+  }
+  html body.role-student #dashboardProgressSection .stat-sub::after {
+    content: "0%";
+    font-size: 11px;
+  }
+  html body.role-student #dashboardProgressSection .stat-sub[data-progress]::after {
+    content: attr(data-progress);
+  }
   html body.role-student #dashboardProgressSection .stat-progress {
     grid-column: 1 / -1 !important;
-    grid-row: 4 !important;
+    grid-row: 3 !important;
     width: 100%;
     margin: 0;
   }

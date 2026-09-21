@@ -609,7 +609,7 @@
       }
     </style>
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260921-6" />
+    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260921-7" />
   </head>
   <body>
     <div class="dashboard">
@@ -3941,6 +3941,7 @@
             const progressBar = document.getElementById(`stat-progress-${procedureKey}`);
             if (number) number.textContent = count;
             if (target) target.textContent = `${count} / ${config.target}`;
+            if (target) target.closest(".stat-sub")?.setAttribute("data-progress", `${progress}%`);
             if (progressBar) {
               progressBar.setAttribute("aria-valuenow", String(Math.min(count, config.target)));
               progressBar.title = `${count} of ${config.target} cases completed (${progress}%)`;
