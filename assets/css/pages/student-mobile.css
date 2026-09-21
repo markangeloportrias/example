@@ -209,8 +209,8 @@
 
   /* Stack My Records controls instead of retaining the desktop toolbar grid. */
   html body.role-student #deliveryAssistedWorkspace:not([style*="display: none"]) {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
+    display: flex !important;
+    flex-direction: column !important;
     align-items: stretch !important;
     gap: 14px !important;
   }
@@ -221,11 +221,14 @@
     margin: 0 !important;
   }
   html body.role-student #deliveryAssistedWorkspace #recordProcedureTables {
-    grid-template-columns: minmax(0, 1fr) !important;
+    display: block !important;
   }
   html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .record-procedure-section {
     min-width: 0 !important;
     max-width: 100% !important;
+  }
+  html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .record-procedure-section + .record-procedure-section {
+    margin-top: 16px !important;
   }
   html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .prc-procedure-table-container {
     min-width: 0 !important;
@@ -281,8 +284,8 @@
   }
   html body.role-student #deliveryAssistedWorkspace #recordProcedureTabs {
     position: static !important;
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex !important;
+    flex-wrap: wrap !important;
     gap: 6px !important;
     padding: 5px !important;
     height: auto !important;
@@ -290,7 +293,9 @@
     overflow: visible !important;
   }
   html body.role-student #deliveryAssistedWorkspace #recordProcedureTabs .procedure-tab {
-    width: 100% !important;
+    flex: 0 0 calc((100% - 6px) / 2) !important;
+    width: calc((100% - 6px) / 2) !important;
+    box-sizing: border-box !important;
     min-width: 0 !important;
     height: auto !important;
     min-height: 44px !important;
