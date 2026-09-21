@@ -252,6 +252,31 @@
     z-index: auto !important;
     box-shadow: none !important;
   }
+  html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table tbody td:last-child {
+    padding: 6px 3px !important;
+  }
+  html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .case-actions {
+    gap: 2px !important;
+    flex-wrap: wrap !important;
+    max-width: 100%;
+  }
+  html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .case-action-btn {
+    flex: 0 0 24px !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    box-shadow: none !important;
+  }
+  html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .case-action-btn i {
+    font-size: 10px !important;
+  }
+  html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .record-status-cell {
+    --record-status-min-width: 0px;
+    padding: 6px 2px !important;
+  }
   html body.role-student #deliveryAssistedWorkspace .record-table-header {
     display: flex !important;
     flex-direction: column !important;
