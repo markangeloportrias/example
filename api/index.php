@@ -1445,7 +1445,19 @@ try {
             $updated = true;
             respond(['ok'=>$updated]);
         }
-        if ($method === 'PATCH' && $id !== '' && in_array($action, ['unsend', 'delete'], true)) {
+        if ($method === 'PATCH' && $id !== '' && $action === 'unsend') {
+            $ownerWhere = $user['role'] === 'student'
+                ? "sender_role='student' AND student_id=?"
+                : ($user['role'] === 'instructor' ? "sender_role='instructor' AND instructor_id=?" : '1=1');
+            [$targetWhere, $targetParams] = $chatTarget($id, $data, $ownerWhere, $ownerWhere === '1=1' ? [] : [$user['user_uid']]);
+            $matches = $pdo->prepare("SELECT id FROM chat_messages WHERE $targetWhere LIMIT 2");
+            $matches->execute($targetParams);
+            if (count($matches->fetchAll()) !== 1) respond(['ok'=>false,'message'=>'This message could not be uniquely identified. Refresh the conversation and try again.'],409);
+            $stmt = $pdo->prepare("UPDATE chat_messages SET message=? WHERE $targetWhere");
+            $stmt->execute(['You unsent a message', ...$targetParams]);
+            respond(['ok'=>$stmt->rowCount()>0]);
+        }
+        if ($method === 'PATCH' && $id !== '' && $action === 'delete') {
             $ownerWhere = $user['role'] === 'student'
                 ? "sender_role='student' AND student_id=?"
                 : ($user['role'] === 'instructor' ? "sender_role='instructor' AND instructor_id=?" : '1=1');

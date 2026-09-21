@@ -4590,7 +4590,8 @@
         }
         messages.forEach((message) => {
           const item = document.createElement("div");
-          item.className = `chat-message ${message.sender === "instructor" ? "instructor" : "student"}`;
+          const isUnsentNotice = message.text === "You unsent a message";
+          item.className = `chat-message ${message.sender === "instructor" ? "instructor" : "student"}${isUnsentNotice ? " is-unsent" : ""}`;
           item.textContent = message.text;
           const time = document.createElement("small");
           const senderLabel = message.sender === "instructor"
@@ -4598,7 +4599,7 @@
             : "You";
           time.textContent = `${senderLabel} · ${message.time}`;
           item.appendChild(time);
-          if (message.sender === "student") {
+          if (message.sender === "student" && !isUnsentNotice) {
             const toggle = document.createElement("button");
             toggle.type = "button";
             toggle.className = "student-chat-message-menu-toggle";

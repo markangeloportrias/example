@@ -1852,12 +1852,13 @@
         }
         msgs.forEach((message) => {
           const bubble = document.createElement("div");
-          bubble.className = "chat-msg " + (message.from === "instructor" ? "instructor" : "student");
+          const isUnsentNotice = message.text === "You unsent a message";
+          bubble.className = "chat-msg " + (message.from === "instructor" ? "instructor" : "student") + (isUnsentNotice ? " is-unsent" : "");
           const content = document.createElement("span");
           content.className = "chat-message-text";
           content.textContent = message.text || "";
           bubble.appendChild(content);
-          if (message.from === "instructor") {
+          if (message.from === "instructor" && !isUnsentNotice) {
             const menuButton = document.createElement("button");
             menuButton.type = "button";
             menuButton.className = "chat-message-menu-toggle";
