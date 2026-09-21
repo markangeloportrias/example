@@ -259,8 +259,21 @@
   }
   html body.role-student #deliveryAssistedWorkspace #recordProcedureTabs {
     position: static !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px !important;
     padding: 5px !important;
-    overflow-x: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  html body.role-student #deliveryAssistedWorkspace #recordProcedureTabs .procedure-tab {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 44px !important;
+    white-space: normal !important;
+    text-align: center;
   }
   html body.role-student #deliveryAssistedWorkspace .search-filter-bar {
     grid-template-columns: minmax(0, 1fr) !important;
