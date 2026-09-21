@@ -1528,7 +1528,7 @@
 <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20260913-feedback-metadata-1"></script>
+    <script src="assets/js/api-client.js?v=20260921-silent-chat-refresh-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -1590,10 +1590,10 @@
         if (dot) dot.hidden = !hasUnread;
       }
 
-      async function refreshStudentChatUnreadIndicator(markRead = false) {
+      async function refreshStudentChatUnreadIndicator(markRead = false, silent = false) {
         if (!currentStudent?.student_id) return;
         try {
-          const messages = await ApiClient.getChatMessages({ student_id: getCurrentStudentId() });
+          const messages = await ApiClient.getChatMessages({ student_id: getCurrentStudentId() }, { silent });
           const incoming = (Array.isArray(messages) ? messages : []).filter((message) =>
             String(message?.sender_role || message?.sender || "").toLowerCase() === "instructor"
           );
@@ -1621,7 +1621,7 @@
         if (studentChatUnreadTimer) clearInterval(studentChatUnreadTimer);
         if (refreshImmediately) void refreshStudentChatUnreadIndicator(currentTab === "chat");
         studentChatUnreadTimer = setInterval(() => {
-          if (!document.hidden) void refreshStudentChatUnreadIndicator(currentTab === "chat");
+          if (!document.hidden) void refreshStudentChatUnreadIndicator(currentTab === "chat", true);
         }, STUDENT_CHAT_UNREAD_REFRESH_MS);
       }
 

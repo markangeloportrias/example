@@ -2989,11 +2989,11 @@
     try { return await mysqlRequest('chat',{method:'POST',body:JSON.stringify(payload||{})}); }
     catch(error){return {ok:false,message:error.message};}
   };
-  ApiClient.getChatMessages = async function (filters) {
+  ApiClient.getChatMessages = async function (filters, options) {
     var f=filters||{};var query=[];
     if (f.student_id||f.studentId) query.push('student_id='+encodeURIComponent(f.student_id||f.studentId));
     if (f.instructor_id||f.instructorId) query.push('instructor_id='+encodeURIComponent(f.instructor_id||f.instructorId));
-    var result=await mysqlRequest('chat'+(query.length?'?'+query.join('&'):''));return result.messages||[];
+    var result=await mysqlRequest('chat'+(query.length?'?'+query.join('&'):''), { silent: options?.silent === true });return result.messages||[];
   };
   function chatMessageIdentity(message) {
     var source = message && (message.identity || message);
