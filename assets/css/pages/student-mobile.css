@@ -118,18 +118,23 @@
     align-items: stretch !important;
   }
   html body.role-student #dashboardProgressSection .stat-card-h {
-    display: flex !important;
+    display: grid !important;
+    grid-template-columns: 28px minmax(0, 1fr) !important;
+    grid-template-rows: auto auto auto auto !important;
     height: auto !important;
-    min-height: 180px !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    padding: 14px !important;
-    gap: 10px !important;
+    min-height: 112px !important;
+    align-items: center !important;
+    align-content: start;
+    padding: 10px !important;
+    gap: 5px 8px !important;
   }
   html body.role-student #dashboardProgressSection .stat-icon-wrap {
     position: static !important;
-    flex: 0 0 32px !important;
-    align-self: flex-start;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 28px !important;
+    min-width: 28px !important;
+    height: 28px !important;
     margin: 0 !important;
     transform: none !important;
   }
@@ -143,26 +148,35 @@
     grid-column: 1 / -1;
   }
   html body.role-student #dashboardProgressSection .stat-info {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 1 0 auto !important;
-    gap: 6px;
-    width: 100%;
+    display: contents !important;
   }
   html body.role-student #dashboardProgressSection .stat-name {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
     min-height: 2.6em !important;
-    font-size: 11px !important;
+    font-size: 10px !important;
     line-height: 1.3 !important;
     letter-spacing: .02em !important;
     overflow-wrap: normal;
   }
+  html body.role-student #dashboardProgressSection .stat-num {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    margin: 0 !important;
+    font-size: 20px !important;
+    line-height: 1.1 !important;
+  }
   html body.role-student #dashboardProgressSection .stat-sub {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
     display: flex !important;
     justify-content: space-between;
     font-size: 10px !important;
-    margin-top: auto !important;
+    margin: 0 !important;
   }
   html body.role-student #dashboardProgressSection .stat-progress {
+    grid-column: 1 / -1 !important;
+    grid-row: 4 !important;
     width: 100%;
     margin: 0;
   }
