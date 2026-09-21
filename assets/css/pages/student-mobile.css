@@ -220,6 +220,20 @@
     width: 100% !important;
     margin: 0 !important;
   }
+  html body.role-student #deliveryAssistedWorkspace #recordProcedureTables {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .record-procedure-section {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .prc-procedure-table-container {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
   html body.role-student #deliveryAssistedWorkspace .record-table-header {
     display: flex !important;
     flex-direction: column !important;
