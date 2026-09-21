@@ -319,6 +319,89 @@
   }
   html body.role-student #deliveryAssistedWorkspace #recordSearch { padding-left: 36px !important; }
   html body.role-student #deliveryAssistedWorkspace :is(#recordSearch, #recordDateFilter) { font-size: 16px !important; }
+  /* Stack the instructor directory above the conversation on phones. */
+  html body.role-student #chatTab.student-chat-panel {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 0 !important;
+  }
+  html body.role-student #chatTab .student-chat-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  html body.role-student #chatTab .chat-directory {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-height: none !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid #c5d7e8;
+  }
+  html body.role-student #chatTab .chat-directory-header {
+    height: auto !important;
+    flex: 0 0 auto !important;
+    padding: 14px !important;
+  }
+  html body.role-student #chatTab .chat-instructor-search { margin-top: 10px !important; }
+  html body.role-student #chatTab .chat-instructor-search input {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    font-size: 16px !important;
+  }
+  html body.role-student #chatTab .chat-instructor-list {
+    display: grid !important;
+    max-height: 150px !important;
+    overflow-y: auto !important;
+    padding: 0 10px 10px !important;
+  }
+  html body.role-student #chatTab .chat-conversation {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 450px !important;
+    height: clamp(360px, 60dvh, 520px) !important;
+    flex: 0 0 auto !important;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html body.role-student #chatTab .chat-conversation-header {
+    min-height: 64px !important;
+    padding: 12px !important;
+  }
+  html body.role-student #chatTab .chat-conversation-avatar { flex-shrink: 0; }
+  html body.role-student #chatTab .chat-thread { padding: 12px !important; }
+  html body.role-student #chatTab .chat-thread-empty {
+    width: 100% !important;
+    min-height: 150px !important;
+    box-sizing: border-box;
+    padding: 16px !important;
+  }
+  html body.role-student #chatTab .chat-message {
+    max-width: 90% !important;
+    overflow-wrap: anywhere;
+  }
+  html body.role-student #chatTab .chat-compose-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    gap: 8px !important;
+  }
+  html body.role-student #chatTab .chat-compose-field { flex: 1 1 0; min-width: 0; }
+  html body.role-student #chatTab .chat-compose textarea {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    font-size: 16px !important;
+  }
+  html body.role-student #chatTab .chat-send-button {
+    flex: 0 0 auto;
+    width: auto !important;
+    min-width: 64px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 10px !important;
+  }
   /* Correction requests become readable cards on phones only. */
   html body.role-student #editRequestsTab .edit-requests-table-wrap {
     overflow: visible !important;
