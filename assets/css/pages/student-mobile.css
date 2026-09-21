@@ -1,0 +1,101 @@
+/* Student phone layout only; desktop and shared dashboard styles stay intact. */
+@media screen and (max-width: 767px) {
+  html body.role-student .dashboard {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body.role-student .dashboard > .sidebar {
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    flex: 0 0 auto !important;
+    flex-direction: row !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+
+  html body.role-student .sidebar .sidebar-nav {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-direction: row !important;
+    gap: 6px !important;
+  }
+
+  html body.role-student .sidebar .sidebar-bottom {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body.role-student .sidebar .sidebar-nav-item {
+    flex: 0 0 auto !important;
+    min-height: 44px !important;
+    gap: 6px !important;
+    padding: 10px !important;
+    white-space: nowrap !important;
+  }
+
+  html body.role-student .sidebar .sidebar-nav-item > span:not(.nav-badge):not(.chat-unread-dot) {
+    display: inline !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    max-width: none !important;
+    font-size: 12px !important;
+  }
+
+  html body.role-student .dashboard > .main-content {
+    flex: 1 1 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 12px 12px 24px !important;
+    overflow: auto !important;
+  }
+
+  html body.role-student .main-content > * { min-width: 0; max-width: 100%; }
+  html body.role-student .student-dashboard-hero :is(.shared-paper-illustration, .hero-illustration) { display: none !important; visibility: hidden !important; pointer-events: none !important; }
+  html body.role-student .main-content .student-dashboard-hero { padding: 20px !important; text-align: left !important; }
+  html body.role-student .student-dashboard-hero .hero-content { width: 100% !important; max-width: none !important; padding: 0 !important; }
+  html body.role-student .student-dashboard-hero .hero-title { font-size: 24px !important; line-height: 1.2 !important; }
+  html body.role-student .student-dashboard-hero .hero-subtitle { max-width: none !important; }
+  html body.role-student .student-hero-actions { display: flex !important; flex-direction: column !important; align-items: stretch !important; }
+  html body.role-student .student-hero-action { width: 100% !important; min-height: 44px !important; white-space: normal !important; }
+
+  html body.role-student .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html body.role-student .stat-card-h { min-width: 0 !important; gap: 10px !important; }
+  html body.role-student .stat-info { flex: 1; min-width: 0 !important; }
+  html body.role-student .stat-name { white-space: normal !important; overflow-wrap: anywhere; }
+  html body.role-student .stat-sub { flex-wrap: wrap; gap: 4px; }
+  html body.role-student :is(.workspace-header, .recent-records-header, .student-dashboard-section-heading) { flex-wrap: wrap !important; gap: 12px !important; }
+  html body.role-student :is(.workspace-actions, .section-header-actions) { display: flex; flex-wrap: wrap; gap: 8px; }
+  html body.role-student .record-workspace { padding: 14px !important; min-width: 0 !important; }
+  html body.role-student .procedure-tabs { display: flex !important; flex-wrap: nowrap !important; max-width: 100%; overflow-x: auto !important; }
+  html body.role-student .procedure-tab { flex: 0 0 auto; min-height: 44px !important; }
+  html body.role-student .search-filter-bar { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; }
+  html body.role-student #recordDateFilter { max-width: none !important; }
+  html body.role-student :is(.prc-procedure-table-container, .recent-records-list, .edit-requests-table-wrap, .activity-log-table-wrap) { max-width: 100%; overflow-x: auto !important; }
+  html body.role-student .summary-student-info { padding: 16px !important; }
+  html body.role-student .summary-student-detail strong { overflow-wrap: anywhere; }
+  html body.role-student #deliveryInputPane .clinical-form-grid { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+@media screen and (max-width: 480px) {
+  html body.role-student .stats-row { grid-template-columns: minmax(0, 1fr) !important; }
+  html body.role-student .summary-student-details { grid-template-columns: minmax(0, 1fr) !important; }
+}
