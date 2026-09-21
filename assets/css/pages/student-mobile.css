@@ -128,7 +128,7 @@
     padding: 10px !important;
     gap: 8px 6px !important;
   }
-  html body.role-student #dashboardProgressSection .stat-icon-wrap {
+  html body.role-student #dashboardProgressSection .stats-row > .stat-card-h .stat-icon-wrap {
     position: static !important;
     grid-column: 1 !important;
     grid-row: 1 !important;
