@@ -609,7 +609,7 @@
       }
     </style>
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260921-25" />
+    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260921-26" />
   </head>
   <body>
     <div class="dashboard">
@@ -1190,7 +1190,6 @@
               </div>
               <div class="chat-directory-label">Registered instructors</div>
               <div class="chat-instructor-list" id="chatInstructorList"></div>
-              <label class="chat-mobile-instructor-label" for="chatInstructorSelect">Choose instructor</label>
               <select id="chatInstructorSelect" aria-label="Select instructor"></select>
             </aside>
             <div class="chat-conversation">
@@ -1571,6 +1570,7 @@
       const STUDENT_CHAT_UNREAD_REFRESH_MS = 5000;
       let studentChatUnreadTimer = null;
       let chatInstructorOptions = [];
+      let mobileChatInstructorSelected = false;
 
       function getCurrentStudentId() {
         return currentStudent?.student_id || localStorage.getItem("currentStudentId") || "STANDALONE";
@@ -1735,6 +1735,10 @@
           : "Choose a registered instructor from the left";
       }
 
+      function updateMobileChatConversationVisibility() {
+        document.getElementById("chatTab")?.classList.toggle("mobile-chat-selected", mobileChatInstructorSelected);
+      }
+
       function renderChatInstructorList(filterValue = "") {
         const list = document.getElementById("chatInstructorList");
         if (!list) return;
@@ -1759,6 +1763,8 @@
           button.innerHTML = `<span class="chat-instructor-avatar">${escapeHtml(initials)}</span><span><span class="chat-instructor-name">${escapeHtml(name)}</span><span class="chat-instructor-role">${escapeHtml(account.role_title || "Clinical Instructor")}</span></span><i class="fas fa-chevron-right chat-instructor-chevron" aria-hidden="true"></i>`;
           button.addEventListener("click", () => {
             setStoredChatInstructorId(account.id);
+            mobileChatInstructorSelected = true;
+            updateMobileChatConversationVisibility();
             const select = document.getElementById("chatInstructorSelect");
             if (select) select.value = String(account.id);
             renderChatInstructorList(document.getElementById("chatInstructorSearch")?.value || "");

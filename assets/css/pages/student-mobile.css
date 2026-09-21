@@ -1,6 +1,5 @@
 /* Student phone layout only; desktop and shared dashboard styles stay intact. */
 .student-mobile-menu-bar { display: none; }
-.chat-mobile-instructor-label { display: none; }
 @media screen and (max-width: 767px) {
   html body.role-student .student-mobile-menu-bar {
     display: flex;
@@ -383,36 +382,37 @@
     height: 44px !important;
     font-size: 16px !important;
   }
-  html body.role-student #chatTab :is(.chat-instructor-list, .chat-instructor-search, .chat-directory-label) {
-    display: none !important;
-  }
-  html body.role-student #chatTab .chat-mobile-instructor-label {
+  html body.role-student #chatTab .chat-instructor-search {
     display: block !important;
-    margin: 0 14px 6px !important;
-    color: #55718c;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: .04em;
-    text-transform: uppercase;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  html body.role-student #chatTab .chat-directory-label {
+    display: block !important;
+    padding: 0 14px 6px !important;
+  }
+  html body.role-student #chatTab .chat-instructor-list {
+    display: grid !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    padding: 0 14px 10px !important;
+    box-sizing: border-box !important;
+  }
+  html body.role-student #chatTab .chat-instructor-item {
+    width: 100% !important;
+    max-width: none !important;
+    justify-self: stretch !important;
   }
   html body.role-student #chatTab #chatInstructorSelect {
-    display: block !important;
-    width: calc(100% - 28px) !important;
-    min-width: 0 !important;
-    max-width: calc(100% - 28px) !important;
-    height: 44px !important;
-    min-height: 44px !important;
-    margin: 0 14px 14px !important;
-    padding: 8px 36px 8px 12px !important;
-    box-sizing: border-box;
-    border: 1px solid #aac7e3;
-    border-radius: 9px;
-    background: #fff;
-    color: #00296b;
-    font: inherit;
-    font-size: 15px !important;
-    line-height: 1.2 !important;
-    box-shadow: 0 2px 6px rgba(0, 41, 107, .06);
+    display: none !important;
+  }
+  html body.role-student #chatTab .chat-conversation {
+    display: none !important;
+  }
+  html body.role-student #chatTab.mobile-chat-selected .chat-conversation {
+    display: grid !important;
   }
   html body.role-student #chatTab .chat-conversation {
     width: 100% !important;
