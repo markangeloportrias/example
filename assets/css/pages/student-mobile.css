@@ -241,6 +241,9 @@
   html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table,
   html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table :is(th, td, span) {
     touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
   html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table thead tr:first-child :is(th:last-child, th:nth-last-child(2)),
   html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table tbody :is(td:last-child, td:nth-last-child(2)) {
