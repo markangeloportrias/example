@@ -1,5 +1,6 @@
 /* Student phone layout only; desktop and shared dashboard styles stay intact. */
 .student-mobile-menu-bar { display: none; }
+.chat-mobile-back-button { display: none; }
 @media screen and (max-width: 767px) {
   html body.role-student .student-mobile-menu-bar {
     display: flex;
@@ -408,6 +409,9 @@
   html body.role-student #chatTab #chatInstructorSelect {
     display: none !important;
   }
+  html body.role-student #chatTab.mobile-chat-selected .chat-directory {
+    display: none !important;
+  }
   html body.role-student #chatTab .chat-conversation {
     display: none !important;
   }
@@ -425,6 +429,18 @@
   html body.role-student #chatTab .chat-conversation-header {
     min-height: 64px !important;
     padding: 12px !important;
+  }
+  html body.role-student #chatTab.mobile-chat-selected .chat-mobile-back-button {
+    display: grid !important;
+    place-items: center;
+    flex: 0 0 36px;
+    width: 36px !important;
+    height: 36px !important;
+    border: 1px solid #c3d7ef;
+    border-radius: 9px;
+    background: #fff;
+    color: #005baa;
+    cursor: pointer;
   }
   html body.role-student #chatTab .chat-conversation-avatar { flex-shrink: 0; }
   html body.role-student #chatTab .chat-thread { padding: 12px !important; }

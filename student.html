@@ -609,7 +609,7 @@
       }
     </style>
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260921-26" />
+    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260921-27" />
   </head>
   <body>
     <div class="dashboard">
@@ -1194,6 +1194,7 @@
             </aside>
             <div class="chat-conversation">
               <div class="chat-conversation-header">
+                <button class="chat-mobile-back-button" id="chatMobileBackBtn" type="button" aria-label="Back to instructors" title="Back to instructors"><i class="fas fa-arrow-left" aria-hidden="true"></i></button>
                 <div class="chat-conversation-avatar"><i class="fas fa-user-tie" aria-hidden="true"></i></div>
                 <div><div class="chat-conversation-title" id="chatConversationTitle">Select an instructor</div><div class="chat-conversation-subtitle" id="chatConversationSubtitle">Instructor conversation</div></div>
               </div>
@@ -5310,6 +5311,11 @@
         }
         updateChatInstructorHint();
         renderChatThread();
+      });
+
+      document.getElementById("chatMobileBackBtn")?.addEventListener("click", () => {
+        mobileChatInstructorSelected = false;
+        updateMobileChatConversationVisibility();
       });
 
       document.getElementById("settingsPhotoBtn")?.addEventListener("click", () => {
