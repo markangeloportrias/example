@@ -518,3 +518,44 @@
 @media screen and (max-width: 480px) {
   html body.role-student .summary-student-details { grid-template-columns: minmax(0, 1fr) !important; }
 }
+
+@media screen and (max-width: 767px) {
+  html body.role-student #editRequestsTab .edit-requests-table-wrap {
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+  html body.role-student #editRequestsTab table.edit-requests-table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+  }
+  html body.role-student #editRequestsTab table.edit-requests-table thead {
+    display: none !important;
+  }
+  html body.role-student #editRequestsTab table.edit-requests-table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  html body.role-student #editRequestsTab table.edit-requests-table tbody tr {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  html body.role-student #editRequestsTab table.edit-requests-table tbody tr > td {
+    display: grid !important;
+    grid-template-columns: 80px minmax(0, 1fr) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    visibility: visible !important;
+  }
+}
