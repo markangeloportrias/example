@@ -421,8 +421,7 @@
   html body.role-student #chatTab .chat-conversation {
     width: 100% !important;
     min-width: 0 !important;
-    height: 450px !important;
-    height: clamp(320px, calc(100dvh - 235px), 620px) !important;
+    height: clamp(360px, calc(100dvh - 120px), 680px) !important;
     flex: 0 0 auto !important;
     grid-template-columns: minmax(0, 1fr);
   }
@@ -441,6 +440,8 @@
     background: #fff;
     color: #005baa;
     cursor: pointer;
+    order: 3;
+    margin-left: auto;
   }
   html body.role-student #chatTab .chat-conversation-avatar { flex-shrink: 0; }
   html body.role-student #chatTab .chat-thread { padding: 12px !important; }
