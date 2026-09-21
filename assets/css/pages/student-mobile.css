@@ -232,6 +232,7 @@
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
+    touch-action: pan-y pinch-zoom;
     -webkit-overflow-scrolling: touch;
   }
   html body.role-student #deliveryAssistedWorkspace .record-table-header {

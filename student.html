@@ -609,7 +609,7 @@
       }
     </style>
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260921-11" />
+    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260921-12" />
   </head>
   <body>
     <div class="dashboard">
@@ -3402,6 +3402,32 @@
           const wrap = document.createElement("div");
           wrap.className = "clinical-form-table-container prc-procedure-table-container";
           wrap.style.overflowX = "auto";
+
+          // Keep horizontal table swipes separate from vertical page scrolling.
+          let tableSwipe = null;
+          wrap.addEventListener("touchstart", (event) => {
+            tableSwipe = null;
+            if (!window.matchMedia("(max-width: 767px)").matches || event.touches.length !== 1) return;
+            const touch = event.touches[0];
+            tableSwipe = { x: touch.clientX, y: touch.clientY, left: wrap.scrollLeft, axis: null };
+          }, { passive: true });
+          wrap.addEventListener("touchmove", (event) => {
+            if (!tableSwipe || event.touches.length !== 1) {
+              tableSwipe = null;
+              return;
+            }
+            const dx = event.touches[0].clientX - tableSwipe.x;
+            const dy = event.touches[0].clientY - tableSwipe.y;
+            if (!tableSwipe.axis && Math.max(Math.abs(dx), Math.abs(dy)) > 6) {
+              tableSwipe.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+            }
+            if (tableSwipe.axis === "x" && wrap.scrollWidth > wrap.clientWidth) {
+              if (event.cancelable) event.preventDefault();
+              wrap.scrollLeft = tableSwipe.left - dx;
+            }
+          }, { passive: false });
+          wrap.addEventListener("touchend", () => { tableSwipe = null; }, { passive: true });
+          wrap.addEventListener("touchcancel", () => { tableSwipe = null; }, { passive: true });
 
           const table = document.createElement("table");
           table.className = "clinical-form-table procedure-records-table prc-procedure-table";
