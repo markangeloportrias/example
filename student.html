@@ -1591,6 +1591,7 @@
       }
 
       async function refreshStudentChatUnreadIndicator(markRead = false) {
+        if (!currentStudent?.student_id) return;
         try {
           const messages = await ApiClient.getChatMessages({ student_id: getCurrentStudentId() });
           const incoming = (Array.isArray(messages) ? messages : []).filter((message) =>
@@ -1616,9 +1617,9 @@
         }
       }
 
-      function startStudentChatUnreadRefresh() {
+      function startStudentChatUnreadRefresh(refreshImmediately = true) {
         if (studentChatUnreadTimer) clearInterval(studentChatUnreadTimer);
-        void refreshStudentChatUnreadIndicator(currentTab === "chat");
+        if (refreshImmediately) void refreshStudentChatUnreadIndicator(currentTab === "chat");
         studentChatUnreadTimer = setInterval(() => {
           if (!document.hidden) void refreshStudentChatUnreadIndicator(currentTab === "chat");
         }, STUDENT_CHAT_UNREAD_REFRESH_MS);
@@ -1877,8 +1878,15 @@
         return null;
       }
 
-      // Restore current student from session or localStorage
-      window?.addEventListener("load", async () => {
+      function startRestoredStudentDashboard() {
+        displayStudentDashboard(true);
+        switchTab("dashboard");
+        startMyRecordsAutoRefresh();
+        startStudentChatUnreadRefresh(false);
+      }
+
+      // Start after the DOM is ready without waiting for images and other assets.
+      document.addEventListener("DOMContentLoaded", async () => {
         // First try sessionStorage (fresh login)
         let stored = sessionStorage.getItem("currentStudent");
         if (stored) {
@@ -1886,8 +1894,7 @@
             const storedStudent = JSON.parse(stored);
             if (storedStudent?.is_preview) {
               currentStudent = storedStudent;
-              displayStudentDashboard();
-              switchTab("dashboard");
+              startRestoredStudentDashboard();
               return;
             }
             const verified = await ApiClient.getStudent(storedStudent?.student_id || "");
@@ -1896,8 +1903,7 @@
             if (paused) throw new Error("Student account is paused or archived.");
             currentStudent = account;
             sessionStorage.setItem("currentStudent", JSON.stringify(account));
-            displayStudentDashboard();
-            switchTab("dashboard");
+            startRestoredStudentDashboard();
             return;
           } catch (e) {
             sessionStorage.removeItem("currentStudent");
@@ -1924,8 +1930,7 @@
                 JSON.stringify(currentStudent),
               );
               console.log("Current student loaded from API:", currentStudent);
-              displayStudentDashboard();
-              switchTab("dashboard");
+              startRestoredStudentDashboard();
 
               return;
             }
@@ -1945,7 +1950,7 @@
           window.location.replace("login");
       });
 
-      function displayStudentDashboard() {
+      function displayStudentDashboard(profileAlreadyLoaded = false) {
         // Update header with student's unique info
         const studentWelcome = document.getElementById("studentWelcome");
         const studentIdDisplay = document.getElementById("studentIdDisplay");
@@ -1999,7 +2004,7 @@
           applicantNameInput.value = currentStudent.student_name || "";
         }
         loadProfilePhoto();
-        void refreshSidebarStudentPhoto();
+        if (!profileAlreadyLoaded) void refreshSidebarStudentPhoto();
         void refreshStudentChatUnreadIndicator(false);
         updateProfileNavPanel();
       }
@@ -3971,6 +3976,7 @@
       }
 
       async function refreshStudentLiveData() {
+        if (!currentStudent?.student_id) return;
         const focused = document.activeElement;
         if (
           document.hidden ||
@@ -6445,8 +6451,7 @@
 
       // Keep the student portal synchronized without requiring a hard refresh.
       // Skip a cycle while the student is typing so draft form values are preserved.
-      startMyRecordsAutoRefresh();
-      startStudentChatUnreadRefresh();
+      // Polling starts after the student account is restored.
       document.addEventListener("visibilitychange", () => {
         if (!document.hidden) {
           refreshStudentLiveData();
