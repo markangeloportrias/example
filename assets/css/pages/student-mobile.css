@@ -1,5 +1,28 @@
 /* Student phone layout only; desktop and shared dashboard styles stay intact. */
+.student-mobile-menu-bar { display: none; }
 @media screen and (max-width: 767px) {
+  html body.role-student .student-mobile-menu-bar {
+    display: flex;
+    align-items: center;
+    flex: 0 0 56px;
+    gap: 12px;
+    padding: 6px 12px;
+    background: #003f88;
+    color: #fff;
+    font-weight: 700;
+  }
+  html body.role-student #sidebarToggle {
+    display: grid !important;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255,255,255,.4);
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+  }
   html body.role-student .dashboard {
     display: flex !important;
     flex-direction: column !important;
@@ -13,25 +36,33 @@
   }
 
   html body.role-student .dashboard > .sidebar {
-    position: relative !important;
-    inset: auto !important;
+    position: fixed !important;
+    inset: 56px auto auto 0 !important;
     transform: none !important;
     flex: 0 0 auto !important;
-    flex-direction: row !important;
-    width: 100% !important;
+    flex-direction: column !important;
+    width: min(300px, 90vw) !important;
     min-width: 0 !important;
     max-width: 100% !important;
     height: auto !important;
+    max-height: calc(100dvh - 56px) !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
     gap: 8px !important;
     padding: 8px !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  html body.role-student .dashboard.sidebar-open > .sidebar {
+    visibility: visible !important;
+    pointer-events: auto !important;
   }
 
   html body.role-student .sidebar .sidebar-nav {
     display: flex !important;
     flex: 0 0 auto !important;
-    flex-direction: row !important;
+    flex-direction: column !important;
     gap: 6px !important;
   }
 
@@ -43,6 +74,8 @@
   }
 
   html body.role-student .sidebar .sidebar-nav-item {
+    width: 100% !important;
+    justify-content: flex-start !important;
     flex: 0 0 auto !important;
     min-height: 44px !important;
     gap: 6px !important;

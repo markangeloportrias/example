@@ -609,10 +609,14 @@
       }
     </style>
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260921-1" />
+    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260921-2" />
   </head>
   <body>
     <div class="dashboard">
+      <div class="student-mobile-menu-bar">
+        <button id="sidebarToggle" type="button" aria-label="Open navigation menu" aria-controls="studentSidebar" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
+        <span>Student Portal</span>
+      </div>
       <!-- Slim Top Header -->
       <header class="header">
         <div class="header-left">
@@ -758,7 +762,7 @@
       <!-- Closes .header -->
 
       <!-- Left Sidebar -->
-      <nav class="sidebar" aria-label="Main Navigation">
+      <nav class="sidebar" id="studentSidebar" aria-label="Main Navigation">
         <div class="sidebar-brand">
           <div class="sidebar-brand-logos portal-mark-wrap"><img src="assets/images/portal-mark-cropped.png" alt="MIDWIFE Clinical Portal" class="portal-mark" /></div>
           <div class="sidebar-brand-copy"><strong>Clinical Portal</strong><span>Student workspace</span></div>
@@ -5308,17 +5312,31 @@
       // Hamburger Menu Logic for Mobile Devices
       const portalContainer = document.querySelector(".dashboard");
       const sidebarToggleBtn = document.getElementById("sidebarToggle");
+      function setStudentMobileMenu(open) {
+        portalContainer.classList.toggle("sidebar-open", open);
+        sidebarToggleBtn?.setAttribute("aria-expanded", String(open));
+        sidebarToggleBtn?.setAttribute("aria-label", open ? "Close navigation menu" : "Open navigation menu");
+        const icon = sidebarToggleBtn?.querySelector("i");
+        if (icon) icon.className = open ? "fas fa-xmark" : "fas fa-bars";
+      }
 
       sidebarToggleBtn?.addEventListener("click", (e) => {
         e.stopPropagation();
-        portalContainer.classList.toggle("sidebar-open");
+        setStudentMobileMenu(!portalContainer.classList.contains("sidebar-open"));
       });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && portalContainer.classList.contains("sidebar-open")) {
+          setStudentMobileMenu(false);
+          sidebarToggleBtn?.focus();
+        }
+      });
+      window.matchMedia("(max-width: 767px)").addEventListener("change", () => setStudentMobileMenu(false));
 
       // Close sidebar when clicking any navigation link (mobile view)
       document.querySelectorAll(".sidebar-nav-item").forEach((item) => {
         item.addEventListener("click", () => {
           if (window.innerWidth <= 1024) {
-            portalContainer.classList.remove("sidebar-open");
+            setStudentMobileMenu(false);
           }
         });
       });
@@ -5604,7 +5622,7 @@
           !e.target.closest(".sidebar") &&
           !e.target.closest("#sidebarToggle")
         ) {
-          portalContainer.classList.remove("sidebar-open");
+          setStudentMobileMenu(false);
         }
       });
 
