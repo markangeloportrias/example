@@ -1923,7 +1923,23 @@
           .catch((error) => console.error(error));
       }
 
-      function showCard(targetId) {
+      function showCard(targetId, updateHistory = true) {
+        const currentHistoryState = window.history.state || {};
+        if (
+          updateHistory &&
+          (currentHistoryState.adminPortalCard !== true ||
+            currentHistoryState.adminCard !== targetId)
+        ) {
+          window.history.pushState(
+            {
+              ...currentHistoryState,
+              adminPortalCard: true,
+              adminCard: targetId,
+            },
+            "",
+            window.location.href,
+          );
+        }
         window.StudentLoading?.setScope(targetId);
         if (targetId === "instructorsCard") renderInstructorAccounts();
         if (targetId === "studentsCard") {
@@ -1985,6 +2001,12 @@
         if (targetId === "editRequestsCard") loadAdminEditRequests();
         if (targetId === "notificationsCard") loadAdminNotifications();
       }
+
+      window.addEventListener("popstate", (event) => {
+        const state = event.state;
+        if (!state?.adminPortalCard) return;
+        showCard(state.adminCard || "dashboardCard", false);
+      });
 
       async function viewInstructorInfo(accountId) {
         try {
@@ -7168,6 +7190,15 @@
       function startAdminDashboard() {
         if (adminDashboardInitialized) return;
         adminDashboardInitialized = true;
+        window.history.replaceState(
+          {
+            ...(window.history.state || {}),
+            adminPortalCard: true,
+            adminCard: "dashboardCard",
+          },
+          "",
+          window.location.href,
+        );
         window.StudentLoading?.setScope("dashboardCard");
         refreshOverview();
         setStudentsNavLevel("years");
@@ -7178,7 +7209,7 @@
         document.addEventListener("visibilitychange", () => {
           if (!document.hidden) refreshAdminLiveData();
         });
-        showCard("dashboardCard");
+        showCard("dashboardCard", false);
       }
 
       (window.__portalAdminSessionReady || Promise.resolve({ ok: true, role: "admin" }))

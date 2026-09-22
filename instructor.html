@@ -7445,6 +7445,22 @@
       };
 
       function setActiveSection(type, options = {}) {
+        const currentHistoryState = window.history.state || {};
+        if (
+          options.updateHistory !== false &&
+          (currentHistoryState.instructorPortalSection !== true ||
+            currentHistoryState.instructorSection !== type)
+        ) {
+          window.history.pushState(
+            {
+              ...currentHistoryState,
+              instructorPortalSection: true,
+              instructorSection: type,
+            },
+            "",
+            window.location.href,
+          );
+        }
         const previousType = activeType;
         if (type === "my-records" && !options.preserveCurrentRecordsBlock) {
           selectedCurrentRecordsStudent = null;
@@ -7534,6 +7550,12 @@
 
         loadRecords();
       }
+
+      window.addEventListener("popstate", (event) => {
+        const state = event.state;
+        if (!state?.instructorPortalSection) return;
+        setActiveSection(state.instructorSection || "dashboard", { updateHistory: false });
+      });
 
       // Sidebar nav items
       document.querySelectorAll(".sidebar-nav-item").forEach((item) => {
@@ -7860,6 +7882,15 @@
       });
 
       // Initial load
+      window.history.replaceState(
+        {
+          ...(window.history.state || {}),
+          instructorPortalSection: true,
+          instructorSection: "dashboard",
+        },
+        "",
+        window.location.href,
+      );
       loadRecords();
       renderEditNotifications();
       refreshDashboardCounts();
