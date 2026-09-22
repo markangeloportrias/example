@@ -1595,6 +1595,11 @@
         window.history.pushState(next, "", window.location.href);
       }
 
+      function pushStudentChatConversationHistory() {
+        pushStudentHistory("chat", "", false);
+        pushStudentHistory("chat", "", true);
+      }
+
       function getCurrentStudentId() {
         return currentStudent?.student_id || localStorage.getItem("currentStudentId") || "STANDALONE";
       }
@@ -1797,7 +1802,7 @@
             setStoredChatInstructorId(account.id);
             mobileChatInstructorSelected = true;
             updateMobileChatConversationVisibility();
-            pushStudentHistory("chat", "", true);
+            pushStudentChatConversationHistory();
             const select = document.getElementById("chatInstructorSelect");
             if (select) select.value = String(account.id);
             renderChatInstructorList(document.getElementById("chatInstructorSearch")?.value || "");
@@ -4774,6 +4779,20 @@
 
       window.addEventListener("popstate", (event) => {
         const state = event.state;
+        if (
+          currentTab === "chat" &&
+          mobileChatInstructorSelected &&
+          (!state?.studentPortalTab || state.studentTab !== "chat")
+        ) {
+          mobileChatInstructorSelected = false;
+          window.history.replaceState(
+            getStudentHistoryState("chat", "", false),
+            "",
+            window.location.href,
+          );
+          switchTab("chat", "", false);
+          return;
+        }
         if (!state?.studentPortalTab) return;
         mobileChatInstructorSelected = state.studentTab === "chat" && Boolean(state.studentChatInstructorSelected);
         switchTab(state.studentTab || "dashboard", state.studentProcedure || "", false);
@@ -5355,7 +5374,7 @@
         setStoredChatInstructorId(event.target.value);
         mobileChatInstructorSelected = true;
         updateMobileChatConversationVisibility();
-        pushStudentHistory("chat", "", true);
+        pushStudentChatConversationHistory();
         if (studentEditingChatMessage) {
           chatMessageInput.value = "";
           cancelStudentMessageEdit();
