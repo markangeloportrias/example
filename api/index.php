@@ -1262,8 +1262,8 @@ try {
             $where = $user['role'] === 'student'
                 ? ' AND student_id=? AND student_dismissed_at IS NULL'
                 : ($archived
-                    ? ' AND archived_at IS NOT NULL'
-                    : ' AND archived_at IS NULL AND reviewer_dismissed_at IS NULL');
+                    ? ' AND archived_at IS NOT NULL AND student_dismissed_at IS NULL'
+                    : ' AND archived_at IS NULL AND reviewer_dismissed_at IS NULL AND student_dismissed_at IS NULL');
             $stmt = $pdo->prepare('SELECT edit_requests.* FROM edit_requests WHERE 1=1' . $where . ' ORDER BY requested_at DESC');
             $stmt->execute($user['role'] === 'student' ? [$user['user_uid']] : []);
             $requests = $stmt->fetchAll();
