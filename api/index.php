@@ -1264,7 +1264,20 @@ try {
                 : ($archived
                     ? ' AND archived_at IS NOT NULL'
                     : ' AND archived_at IS NULL AND reviewer_dismissed_at IS NULL');
-            $stmt = $pdo->prepare('SELECT * FROM edit_requests WHERE 1=1' . $where . ' ORDER BY requested_at DESC');
+            $stmt = $pdo->prepare('SELECT edit_requests.*,
+                (SELECT CASE
+                    WHEN audit_trail.actor_role = \'instructor\' THEN COALESCE(instructor_accounts.display_name, instructor_accounts.username, audit_trail.actor_uid)
+                    WHEN audit_trail.actor_role = \'admin\' THEN \'Administrator\'
+                    ELSE audit_trail.actor_uid
+                 END
+                 FROM audit_trail
+                 LEFT JOIN instructor_accounts ON instructor_accounts.account_uid = audit_trail.actor_uid
+                 WHERE audit_trail.entity_type = \'edit_request\'
+                   AND audit_trail.entity_uid = CAST(edit_requests.id AS CHAR)
+                   AND audit_trail.action_name IN (\'approve\', \'reject\')
+                 ORDER BY audit_trail.created_at DESC, audit_trail.id DESC
+                 LIMIT 1) AS reviewer_name
+                FROM edit_requests WHERE 1=1' . $where . ' ORDER BY requested_at DESC');
             $stmt->execute($user['role'] === 'student' ? [$user['user_uid']] : []);
             respond(['ok' => true, 'requests' => $stmt->fetchAll()]);
         }
