@@ -7396,8 +7396,10 @@
       function startAdminDashboard() {
         if (adminDashboardInitialized) return;
         adminDashboardInitialized = true;
-        window.history.replaceState(
-          getAdminHistoryState("dashboardCard"),
+        const adminRootState = getAdminHistoryState("dashboardCard");
+        window.history.replaceState(adminRootState, "", window.location.href);
+        window.history.pushState(
+          { ...adminRootState, adminHistoryBoundary: true },
           "",
           window.location.href,
         );
