@@ -5365,13 +5365,21 @@
       });
 
       document.getElementById("chatMobileBackBtn")?.addEventListener("click", () => {
-        if (mobileChatInstructorSelected && window.history.state?.studentChatInstructorSelected) {
-          window.history.back();
-          return;
-        }
+        const currentHistoryState = window.history.state || {};
         mobileChatInstructorSelected = false;
         updateMobileChatConversationVisibility();
-        pushStudentHistory("chat", "", false);
+        if (currentHistoryState.studentPortalTab === "dashboard" && currentHistoryState.studentTab === "chat") {
+          window.history.replaceState(
+            {
+              ...currentHistoryState,
+              studentChatInstructorSelected: false,
+            },
+            "",
+            window.location.href,
+          );
+        } else {
+          pushStudentHistory("chat", "", false);
+        }
       });
 
       document.getElementById("settingsPhotoBtn")?.addEventListener("click", () => {
