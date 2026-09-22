@@ -7402,16 +7402,21 @@
           window.location.href,
         );
         window.StudentLoading?.setScope("dashboardCard");
-        refreshOverview();
         setStudentsNavLevel("years");
-        loadAdminNotifications();
-        loadAdminActivityLog();
-        setInterval(refreshAdminLiveData, 5000);
-        window.addEventListener("focus", refreshAdminLiveData);
-        document.addEventListener("visibilitychange", () => {
-          if (!document.hidden) refreshAdminLiveData();
-        });
         showCard("dashboardCard", false);
+        const deferAdminStartupLoad = window.requestIdleCallback
+          ? (callback) => window.requestIdleCallback(callback, { timeout: 800 })
+          : (callback) => window.setTimeout(callback, 0);
+        deferAdminStartupLoad(() => {
+          refreshOverview();
+          loadAdminNotifications();
+          loadAdminActivityLog();
+          setInterval(refreshAdminLiveData, 5000);
+          window.addEventListener("focus", refreshAdminLiveData);
+          document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) refreshAdminLiveData();
+          });
+        });
       }
 
       (window.__portalAdminSessionReady || Promise.resolve({ ok: true, role: "admin" }))

@@ -2475,8 +2475,19 @@
         if (el) el.textContent = String(value);
       }
 
+      let instructorAllCasesRequest = null;
+      function getInstructorAllCases() {
+        if (!instructorAllCasesRequest) {
+          instructorAllCasesRequest = ApiClient.getAllCasesForInstructor("", "")
+            .finally(() => {
+              instructorAllCasesRequest = null;
+            });
+        }
+        return instructorAllCasesRequest;
+      }
+
       async function refreshDashboardCounts() {
-        const cases = await ApiClient.getAllCasesForInstructor("", "");
+        const cases = await getInstructorAllCases();
         const grouped = {
           "delivery-handled": 0,
           "delivery-assisted": 0,
@@ -6527,10 +6538,9 @@
           return;
 
         const procedureName = isDashboard || isMyRecords ? "" : procedureByType[activeType];
-        const list = await ApiClient.getAllCasesForInstructor(
-          procedureName,
-          "",
-        );
+        const list = procedureName
+          ? await ApiClient.getAllCasesForInstructor(procedureName, "")
+          : await getInstructorAllCases();
         if (isDashboard) {
           if (selectedCurrentRecordsStudent) {
             if (activeTitleText) {
@@ -7997,10 +8007,15 @@
         window.location.href,
       );
       loadRecords();
-      renderEditNotifications();
       refreshDashboardCounts();
       setInstructorStudentsLevel("years");
-      renderInstructorSchoolYears();
+      const deferInstructorSecondaryLoad = window.requestIdleCallback
+        ? (callback) => window.requestIdleCallback(callback, { timeout: 800 })
+        : (callback) => window.setTimeout(callback, 0);
+      deferInstructorSecondaryLoad(() => {
+        renderEditNotifications();
+        renderInstructorSchoolYears();
+      });
 
       // Live portal synchronization. Refresh only when visible and when the
       // instructor is not actively entering data in a field.
