@@ -6189,6 +6189,12 @@
         recordViewFromProgressOverview = false;
         activeCasesView = "blocks";
         if (updateHistory) pushAdminHistory("casesCard");
+        document.getElementById("casesCard")?.classList.remove("records-focus");
+        document.getElementById("casesYearPanel").style.display = "none";
+        document.getElementById("casesBlockPanel").style.display = "block";
+        document.getElementById("casesStudentPanel").style.display = "none";
+        document.getElementById("casesListPanel").style.display = "none";
+        document.getElementById("casesBreadcrumb").innerHTML = `<button type="button" class="mini-btn" data-cases-back-years>Clinical Records</button><span class="sep" style="margin:0 8px;color:#666">/</span><strong>${escapeHtml(yearLabel)}</strong>`;
         const result = await ApiClient.getStudentBlocks(yearLabel);
         const blocks = result && result.ok && Array.isArray(result.blocks) ? result.blocks : [];
         const tbody = document.getElementById("casesBlocksTbody");
