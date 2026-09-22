@@ -153,6 +153,9 @@ function ensureStudentProfileFields(PDO $pdo): void
 
 function ensureEditRequestDismissalFields(PDO $pdo): void
 {
+    if (!columnExists($pdo, 'edit_requests', 'reviewer_name')) {
+        $pdo->exec('ALTER TABLE edit_requests ADD COLUMN reviewer_name VARCHAR(255) NULL AFTER rejected_at');
+    }
     if (!columnExists($pdo, 'edit_requests', 'reviewer_dismissed_at')) {
         $pdo->exec('ALTER TABLE edit_requests ADD COLUMN reviewer_dismissed_at DATETIME NULL AFTER archived_at');
     }

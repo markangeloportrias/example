@@ -1265,6 +1265,7 @@ try {
                     ? ' AND archived_at IS NOT NULL'
                     : ' AND archived_at IS NULL AND reviewer_dismissed_at IS NULL');
             $stmt = $pdo->prepare('SELECT edit_requests.*,
+                COALESCE(edit_requests.reviewer_name,
                 (SELECT CASE
                     WHEN audit_trail.actor_role = \'instructor\' THEN COALESCE(instructor_accounts.display_name, instructor_accounts.username, audit_trail.actor_uid)
                     WHEN audit_trail.actor_role = \'admin\' THEN \'Administrator\'
@@ -1274,9 +1275,10 @@ try {
                  LEFT JOIN instructor_accounts ON instructor_accounts.account_uid = audit_trail.actor_uid
                  WHERE audit_trail.entity_type = \'edit_request\'
                    AND audit_trail.entity_uid = CAST(edit_requests.id AS CHAR)
-                   AND audit_trail.action_name IN (\'approve\', \'reject\')
-                 ORDER BY audit_trail.created_at DESC, audit_trail.id DESC
-                 LIMIT 1) AS reviewer_name
+                   AND audit_trail.action_name = CASE WHEN edit_requests.status = \'approved\' THEN \'approve\' WHEN edit_requests.status = \'rejected\' THEN \'reject\' ELSE \'\' END
+                   AND audit_trail.created_at BETWEEN COALESCE(edit_requests.approved_at, edit_requests.rejected_at) - INTERVAL 1 SECOND AND COALESCE(edit_requests.approved_at, edit_requests.rejected_at) + INTERVAL 1 SECOND
+                 ORDER BY audit_trail.id DESC
+                 LIMIT 1)) AS reviewer_name
                 FROM edit_requests WHERE 1=1' . $where . ' ORDER BY requested_at DESC');
             $stmt->execute($user['role'] === 'student' ? [$user['user_uid']] : []);
             respond(['ok' => true, 'requests' => $stmt->fetchAll()]);
@@ -1330,17 +1332,31 @@ try {
                 $pdo->commit();
                 respond(['ok' => $currentRequest['archived_at'] === null]);
             }
+            $reviewerName = null;
+            if (in_array($action, ['approve', 'reject'], true)) {
+                if ($user['role'] === 'admin') {
+                    $reviewerName = 'Administrator';
+                } else {
+                    $reviewer = $pdo->prepare('SELECT COALESCE(NULLIF(TRIM(display_name), \'\'), NULLIF(TRIM(username), \'\'), account_uid) FROM instructor_accounts WHERE account_uid=? LIMIT 1');
+                    $reviewer->execute([$user['user_uid']]);
+                    $reviewerName = (string)($reviewer->fetchColumn() ?: $user['user_uid']);
+                }
+            }
             $sql = $action === 'approve'
-                ? "UPDATE edit_requests SET status='approved', approved_at=NOW() WHERE id=? AND archived_at IS NULL"
+                ? "UPDATE edit_requests SET status='approved', approved_at=NOW(), reviewer_name=? WHERE id=? AND archived_at IS NULL"
                 : ($action === 'reject'
-                    ? "UPDATE edit_requests SET status='rejected', rejection_remarks=?, rejected_at=NOW() WHERE id=? AND archived_at IS NULL"
+                    ? "UPDATE edit_requests SET status='rejected', rejection_remarks=?, rejected_at=NOW(), reviewer_name=? WHERE id=? AND archived_at IS NULL"
                     : ($action === 'restore'
                         ? 'UPDATE edit_requests SET archived_at=NULL WHERE id=? AND archived_at IS NOT NULL'
                         : ($user['role'] === 'student'
                             ? 'UPDATE edit_requests SET student_dismissed_at=NOW() WHERE id=? AND student_dismissed_at IS NULL'
                             : 'UPDATE edit_requests SET reviewer_dismissed_at=NOW() WHERE id=? AND reviewer_dismissed_at IS NULL')));
             $sql = str_replace('WHERE id=?', "WHERE $requestWhere", $sql) . ' LIMIT 1';
-            $params = $action === 'reject' ? array_merge([$data['remarks'] ?? ''], $requestParams) : $requestParams;
+            $params = $action === 'approve'
+                ? array_merge([$reviewerName], $requestParams)
+                : ($action === 'reject'
+                    ? array_merge([$data['remarks'] ?? '', $reviewerName], $requestParams)
+                    : $requestParams);
             $stmt=$pdo->prepare($sql);$stmt->execute($params);
             if (in_array($action,['approve','reject'],true)) {
                 $request=$currentRequest;
