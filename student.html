@@ -1573,6 +1573,28 @@
       let chatInstructorOptions = [];
       let mobileChatInstructorSelected = false;
 
+      function getStudentHistoryState(tabName = currentTab, key = "", chatSelected = mobileChatInstructorSelected) {
+        return {
+          ...(window.history.state || {}),
+          studentPortalTab: "dashboard",
+          studentTab: tabName,
+          studentProcedure: key || "",
+          studentChatInstructorSelected: tabName === "chat" && Boolean(chatSelected),
+        };
+      }
+
+      function pushStudentHistory(tabName = currentTab, key = "", chatSelected = mobileChatInstructorSelected) {
+        const current = window.history.state || {};
+        const next = getStudentHistoryState(tabName, key, chatSelected);
+        if (
+          current.studentPortalTab === "dashboard" &&
+          current.studentTab === next.studentTab &&
+          current.studentProcedure === next.studentProcedure &&
+          Boolean(current.studentChatInstructorSelected) === Boolean(next.studentChatInstructorSelected)
+        ) return;
+        window.history.pushState(next, "", window.location.href);
+      }
+
       function getCurrentStudentId() {
         return currentStudent?.student_id || localStorage.getItem("currentStudentId") || "STANDALONE";
       }
@@ -1775,6 +1797,7 @@
             setStoredChatInstructorId(account.id);
             mobileChatInstructorSelected = true;
             updateMobileChatConversationVisibility();
+            pushStudentHistory("chat", "", true);
             const select = document.getElementById("chatInstructorSelect");
             if (select) select.value = String(account.id);
             renderChatInstructorList(document.getElementById("chatInstructorSearch")?.value || "");
@@ -1898,13 +1921,9 @@
       }
 
       function startRestoredStudentDashboard() {
+        mobileChatInstructorSelected = false;
         window.history.replaceState(
-          {
-            ...(window.history.state || {}),
-            studentPortalTab: "dashboard",
-            studentTab: "dashboard",
-            studentProcedure: "",
-          },
+          getStudentHistoryState("dashboard", "", false),
           "",
           window.location.href,
         );
@@ -4657,19 +4676,9 @@
       }
 
       function switchTab(tabName, key, updateHistory = true) {
-        if (updateHistory) {
-          window.history.pushState(
-            {
-              ...(window.history.state || {}),
-              studentPortalTab: "dashboard",
-              studentTab: tabName,
-              studentProcedure: key || "",
-            },
-            "",
-            window.location.href,
-          );
-        }
+        if (tabName !== "chat") mobileChatInstructorSelected = false;
         currentTab = tabName;
+        if (updateHistory) pushStudentHistory(tabName, key || "", mobileChatInstructorSelected);
 
         // Find elements
         const pageHero = document.querySelector(".page-hero");
@@ -4766,6 +4775,7 @@
       window.addEventListener("popstate", (event) => {
         const state = event.state;
         if (!state?.studentPortalTab) return;
+        mobileChatInstructorSelected = state.studentTab === "chat" && Boolean(state.studentChatInstructorSelected);
         switchTab(state.studentTab || "dashboard", state.studentProcedure || "", false);
       });
 
@@ -5343,6 +5353,9 @@
 
       document.getElementById("chatInstructorSelect")?.addEventListener("change", (event) => {
         setStoredChatInstructorId(event.target.value);
+        mobileChatInstructorSelected = true;
+        updateMobileChatConversationVisibility();
+        pushStudentHistory("chat", "", true);
         if (studentEditingChatMessage) {
           chatMessageInput.value = "";
           cancelStudentMessageEdit();
@@ -5352,8 +5365,13 @@
       });
 
       document.getElementById("chatMobileBackBtn")?.addEventListener("click", () => {
+        if (mobileChatInstructorSelected && window.history.state?.studentChatInstructorSelected) {
+          window.history.back();
+          return;
+        }
         mobileChatInstructorSelected = false;
         updateMobileChatConversationVisibility();
+        pushStudentHistory("chat", "", false);
       });
 
       document.getElementById("settingsPhotoBtn")?.addEventListener("click", () => {
