@@ -1778,6 +1778,82 @@
       let activeCasesStudentId = "";
       let activeCasesStudentName = "";
       let recordViewFromProgressOverview = false;
+      let activeCasesView = "progress";
+
+      function getAdminHistoryState(card = window.history.state?.adminCard || "dashboardCard") {
+        return {
+          ...(window.history.state || {}),
+          adminPortalCard: true,
+          adminCard: card,
+          adminStudentsNav: { ...studentsNav },
+          adminYearlyNav: { ...yearlyNav },
+          adminCasesNav: {
+            view: activeCasesView,
+            year: activeCasesYear,
+            procedure: activeCasesProcedure,
+            procedureDetail: activeCasesProcedureDetail,
+            blockId: activeCasesBlockId,
+            blockLabel: activeCasesBlockLabel,
+            studentId: activeCasesStudentId,
+            studentName: activeCasesStudentName,
+            fromProgressOverview: recordViewFromProgressOverview,
+          },
+        };
+      }
+
+      function pushAdminHistory(card = window.history.state?.adminCard || "dashboardCard") {
+        const current = window.history.state || {};
+        const next = getAdminHistoryState(card);
+        const navigationState = (state) => JSON.stringify({
+          card: state.adminCard,
+          students: state.adminStudentsNav,
+          yearly: state.adminYearlyNav,
+          cases: state.adminCasesNav,
+        });
+        if (
+          current.adminPortalCard === true &&
+          navigationState(current) === navigationState(next)
+        ) return;
+        window.history.pushState(next, "", window.location.href);
+      }
+
+      function restoreAdminHistoryState(state) {
+        if (state?.adminStudentsNav) Object.assign(studentsNav, state.adminStudentsNav);
+        if (state?.adminYearlyNav) Object.assign(yearlyNav, state.adminYearlyNav);
+        const cases = state?.adminCasesNav || {};
+        activeCasesView = cases.view || "progress";
+        activeCasesYear = cases.year || "";
+        activeCasesProcedure = cases.procedure || "";
+        activeCasesProcedureDetail = cases.procedureDetail || "";
+        activeCasesBlockId = cases.blockId || "";
+        activeCasesBlockLabel = cases.blockLabel || "";
+        activeCasesStudentId = cases.studentId || "";
+        activeCasesStudentName = cases.studentName || "";
+        recordViewFromProgressOverview = Boolean(cases.fromProgressOverview);
+      }
+
+      function restoreAdminCasesView() {
+        if (activeCasesView === "years") return renderCasesYears(false);
+        if (activeCasesView === "blocks") {
+          return openCasesYearBlocks(activeCasesYear, false);
+        }
+        if (activeCasesView === "students") {
+          return openCasesBlockStudents(activeCasesBlockId, activeCasesBlockLabel, false);
+        }
+        if (activeCasesView === "student-records") {
+          return openCasesStudentRecords(activeCasesStudentId, activeCasesStudentName, false);
+        }
+        if (activeCasesView === "procedures") {
+          return renderProceduresForYear(activeCasesYear, false);
+        }
+        if (activeCasesView === "procedure-records") {
+          return openCasesProcedureRecords(activeCasesYear, activeCasesProcedure, false);
+        }
+        if (activeCasesView === "year-records") {
+          return openCasesYearRecords(activeCasesYear, false);
+        }
+        return renderProgressOverview();
+      }
 
       function caseProcedureDisplayName(value) {
         const key = procedureLabel(value);
@@ -1923,37 +1999,33 @@
           .catch((error) => console.error(error));
       }
 
-      function showCard(targetId, updateHistory = true) {
-        const currentHistoryState = window.history.state || {};
-        if (
-          updateHistory &&
-          (currentHistoryState.adminPortalCard !== true ||
-            currentHistoryState.adminCard !== targetId)
-        ) {
-          window.history.pushState(
-            {
-              ...currentHistoryState,
-              adminPortalCard: true,
-              adminCard: targetId,
-            },
-            "",
-            window.location.href,
-          );
-        }
+      function showCard(targetId, updateHistory = true, preserveNavigation = false) {
         window.StudentLoading?.setScope(targetId);
         if (targetId === "instructorsCard") renderInstructorAccounts();
         if (targetId === "studentsCard") {
           renderArchivedStudents();
-          if (studentsNav.level !== "years") {
-            backToStudentsYears();
+          if (preserveNavigation) {
+            if (studentsNav.level === "blocks") renderStudentBlocks();
+            else if (studentsNav.level === "students") renderBlockStudents();
+            else renderSchoolYears();
+          } else if (studentsNav.level !== "years") {
+            backToStudentsYears(false);
           } else {
             renderSchoolYears();
           }
         }
         if (targetId === "yearlyReportsCard") {
           loadYearlyProgressSearchStudents();
-          if (yearlyNav.level !== "years") {
-            backToYearlyYears();
+          if (preserveNavigation) {
+            if (yearlyNav.level === "blocks") renderYearlyBlocks();
+            else if (yearlyNav.level === "students") renderYearlyStudentList();
+            else if (yearlyNav.level === "report") renderYearlyReports();
+            else {
+              setYearlyNavLevel("years");
+              renderYearlyYears();
+            }
+          } else if (yearlyNav.level !== "years") {
+            backToYearlyYears(false);
           } else {
             setYearlyNavLevel("years");
             renderYearlyYears();
@@ -1961,8 +2033,9 @@
         }
         // Hide only the main cards (Dashboard, Instructors, Students, Cases, EditRequests, Notifications)
         if (targetId === "casesCard") {
-          populateAllSchoolYearSelects();
-          renderProgressOverview();
+          populateAllSchoolYearSelects(undefined, false);
+          if (preserveNavigation) restoreAdminCasesView();
+          else renderProgressOverview();
         }
         if (targetId === "systemToolsCard") {
           loadAdminActivityLog();
@@ -2000,12 +2073,14 @@
         }
         if (targetId === "editRequestsCard") loadAdminEditRequests();
         if (targetId === "notificationsCard") loadAdminNotifications();
+        if (updateHistory) pushAdminHistory(targetId);
       }
 
       window.addEventListener("popstate", (event) => {
         const state = event.state;
         if (!state?.adminPortalCard) return;
-        showCard(state.adminCard || "dashboardCard", false);
+        restoreAdminHistoryState(state);
+        showCard(state.adminCard || "dashboardCard", false, true);
       });
 
       async function viewInstructorInfo(accountId) {
@@ -2693,34 +2768,38 @@
         renderStudentsBreadcrumb();
       }
 
-      function openStudentsYear(schoolYear) {
+      function openStudentsYear(schoolYear, updateHistory = true) {
         studentsNav.schoolYear = schoolYear || "";
         studentsNav.blockId = "";
         studentsNav.blockLabel = "";
         setStudentsNavLevel("blocks");
         renderStudentBlocks();
+        if (updateHistory) pushAdminHistory("studentsCard");
       }
 
-      function openStudentsBlock(blockId, blockLabel) {
+      function openStudentsBlock(blockId, blockLabel, updateHistory = true) {
         studentsNav.blockId = blockId || "";
         studentsNav.blockLabel = blockLabel || "";
         setStudentsNavLevel("students");
         renderBlockStudents();
+        if (updateHistory) pushAdminHistory("studentsCard");
       }
 
-      function backToStudentsYears() {
+      function backToStudentsYears(updateHistory = true) {
         studentsNav.schoolYear = "";
         studentsNav.blockId = "";
         studentsNav.blockLabel = "";
         setStudentsNavLevel("years");
         renderSchoolYears();
+        if (updateHistory) pushAdminHistory("studentsCard");
       }
 
-      function backToStudentsBlocks() {
+      function backToStudentsBlocks(updateHistory = true) {
         studentsNav.blockId = "";
         studentsNav.blockLabel = "";
         setStudentsNavLevel("blocks");
         renderStudentBlocks();
+        if (updateHistory) pushAdminHistory("studentsCard");
       }
 
       async function renderSchoolYears() {
@@ -3749,7 +3828,7 @@
         }
       }
 
-      function populateAllSchoolYearSelects(schoolYearsResult) {
+      function populateAllSchoolYearSelects(schoolYearsResult, renderCases = true) {
         // Prefer school years returned by ApiClient (includes stored years)
         (schoolYearsResult ? Promise.resolve(schoolYearsResult) : ApiClient.getSchoolYears()).then((res) => {
           let databaseRanges = [];
@@ -3776,7 +3855,7 @@
               opt.textContent = yr;
               casesYearSelect.appendChild(opt);
             });
-            if (typeof renderCasesYears === "function") renderCasesYears();
+            if (renderCases && typeof renderCasesYears === "function") renderCasesYears(false);
           }
         });
       }
@@ -3871,7 +3950,7 @@
         renderYearlyBreadcrumb();
       }
 
-      window.openYearlyReportYear = function (schoolYear) {
+      window.openYearlyReportYear = function (schoolYear, updateHistory = true) {
         yearlyNav.schoolYear = schoolYear || "";
         yearlyNav.blockId = "";
         yearlyNav.blockLabel = "";
@@ -3879,25 +3958,28 @@
         yearlyNav.studentName = "";
         setYearlyNavLevel("blocks");
         renderYearlyBlocks();
+        if (updateHistory) pushAdminHistory("yearlyReportsCard");
       };
 
-      window.openYearlyBlock = function (blockId, blockLabel) {
+      window.openYearlyBlock = function (blockId, blockLabel, updateHistory = true) {
         yearlyNav.blockId = blockId || "";
         yearlyNav.blockLabel = blockLabel || "";
         yearlyNav.studentId = "";
         yearlyNav.studentName = "";
         setYearlyNavLevel("students");
         renderYearlyStudentList();
+        if (updateHistory) pushAdminHistory("yearlyReportsCard");
       };
 
-      window.openYearlyStudentReport = function (studentId, studentName) {
+      window.openYearlyStudentReport = function (studentId, studentName, updateHistory = true) {
         yearlyNav.studentId = studentId || "";
         yearlyNav.studentName = studentName || "";
         setYearlyNavLevel("report");
         renderYearlyReports();
+        if (updateHistory) pushAdminHistory("yearlyReportsCard");
       };
 
-      window.backToYearlyYears = function () {
+      window.backToYearlyYears = function (updateHistory = true) {
         yearlyNav.schoolYear = "";
         yearlyNav.blockId = "";
         yearlyNav.blockLabel = "";
@@ -3905,9 +3987,10 @@
         yearlyNav.studentName = "";
         setYearlyNavLevel("years");
         renderYearlyYears();
+        if (updateHistory) pushAdminHistory("yearlyReportsCard");
       };
 
-      window.backToYearlyBlocks = function () {
+      window.backToYearlyBlocks = function (updateHistory = true) {
         if (!yearlyNav.schoolYear) return;
         yearlyNav.blockId = "";
         yearlyNav.blockLabel = "";
@@ -3915,14 +3998,16 @@
         yearlyNav.studentName = "";
         setYearlyNavLevel("blocks");
         renderYearlyBlocks();
+        if (updateHistory) pushAdminHistory("yearlyReportsCard");
       };
 
-      window.backToYearlyStudents = function () {
+      window.backToYearlyStudents = function (updateHistory = true) {
         if (!yearlyNav.blockId) return;
         yearlyNav.studentId = "";
         yearlyNav.studentName = "";
         setYearlyNavLevel("students");
         renderYearlyStudentList();
+        if (updateHistory) pushAdminHistory("yearlyReportsCard");
       };
 
       function renderYearlyProgressSearchResults() {
@@ -3972,7 +4057,7 @@
         renderYearlyProgressSearchResults();
       }
 
-      async function openYearlyProgressSearchStudent(studentId) {
+      async function openYearlyProgressSearchStudent(studentId, updateHistory = true) {
         const student = yearlyProgressSearchStudents.find((item) =>
           String(item.student_id || "") === String(studentId || ""),
         );
@@ -3994,6 +4079,7 @@
         if (yearlyProgressSearchInput) yearlyProgressSearchInput.value = yearlyNav.studentName;
         if (yearlyProgressSearchResults) yearlyProgressSearchResults.style.display = "none";
         setYearlyNavLevel("report");
+        if (updateHistory) pushAdminHistory("yearlyReportsCard");
         await renderYearlyReports();
       }
 
@@ -5899,6 +5985,7 @@
         activeCasesStudentName = "";
         activeCasesProcedureDetail = "";
         recordViewFromProgressOverview = false;
+        activeCasesView = "progress";
         document.getElementById("casesCard")?.classList.remove("records-focus");
         document.getElementById("casesYearPanel").style.display = "block";
         document.getElementById("casesBlockPanel").style.display = "none";
@@ -5933,7 +6020,7 @@
         });
       }
 
-      async function renderCasesYears() {
+      async function renderCasesYears(updateHistory = false) {
         const renderToken = ++casesYearsRenderToken;
         const tbody = document.getElementById("casesYearsTbody");
         const emptyEl = document.getElementById("casesYearsEmpty");
@@ -5946,6 +6033,8 @@
         activeCasesStudentName = "";
         activeCasesProcedureDetail = "";
         recordViewFromProgressOverview = false;
+        activeCasesView = "years";
+        if (updateHistory) pushAdminHistory("casesCard");
         document.getElementById("casesCard")?.classList.remove("records-focus");
         if (casesSearchInput) casesSearchInput.value = "";
         if (casesProcedureFilter) casesProcedureFilter.value = "";
@@ -6002,10 +6091,17 @@
         }
       }
 
-      async function openCasesYearBlocks(yearLabel) {
+      async function openCasesYearBlocks(yearLabel, updateHistory = true) {
         activeCasesYear = yearLabel;
+        activeCasesProcedure = "";
+        activeCasesProcedureDetail = "";
         activeCasesBlockId = "";
+        activeCasesBlockLabel = "";
         activeCasesStudentId = "";
+        activeCasesStudentName = "";
+        recordViewFromProgressOverview = false;
+        activeCasesView = "blocks";
+        if (updateHistory) pushAdminHistory("casesCard");
         const result = await ApiClient.getStudentBlocks(yearLabel);
         const blocks = result && result.ok && Array.isArray(result.blocks) ? result.blocks : [];
         const tbody = document.getElementById("casesBlocksTbody");
@@ -6024,10 +6120,16 @@
         document.getElementById("casesBreadcrumb").innerHTML = `<button type="button" class="mini-btn" data-cases-back-years>Clinical Records</button><span class="sep" style="margin:0 8px;color:#666">/</span><strong>${escapeHtml(yearLabel)}</strong>`;
       }
 
-      async function openCasesBlockStudents(blockId, blockLabel) {
+      async function openCasesBlockStudents(blockId, blockLabel, updateHistory = true) {
         activeCasesBlockId = String(blockId || "");
         activeCasesBlockLabel = blockLabel || "";
         activeCasesStudentId = "";
+        activeCasesStudentName = "";
+        activeCasesProcedure = "";
+        activeCasesProcedureDetail = "";
+        recordViewFromProgressOverview = false;
+        activeCasesView = "students";
+        if (updateHistory) pushAdminHistory("casesCard");
         showDatabaseLoading(document.getElementById("casesStudentsTbody"), 5, "Loading students...");
         const result = await ApiClient.getBlockStudents(activeCasesBlockId, activeCasesYear, activeCasesBlockLabel);
         const students = result && result.ok && Array.isArray(result.students) ? result.students : [];
@@ -6048,12 +6150,14 @@
         document.getElementById("casesBreadcrumb").innerHTML = `<button type="button" class="mini-btn" data-cases-back-years>Clinical Records</button><span class="sep" style="margin:0 8px;color:#666">/</span><button type="button" class="mini-btn" data-cases-back-blocks>${escapeHtml(activeCasesYear)}</button><span class="sep" style="margin:0 8px;color:#666">/</span><strong>${escapeHtml(activeCasesBlockLabel)}</strong>`;
       }
 
-      async function openCasesStudentRecords(studentId, studentName) {
+      async function openCasesStudentRecords(studentId, studentName, updateHistory = true) {
         activeCasesProcedureDetail = "all";
         recordViewFromProgressOverview = !activeCasesYear && !activeCasesBlockId && !activeCasesProcedure;
         document.getElementById("casesCard")?.classList.add("records-focus");
         activeCasesStudentId = String(studentId || "");
         activeCasesStudentName = studentName || activeCasesStudentId;
+        activeCasesView = "student-records";
+        if (updateHistory) pushAdminHistory("casesCard");
         if (casesYearSelect) casesYearSelect.value = activeCasesYear;
         if (casesSearchField) casesSearchField.style.display = "block";
         if (casesProcedureFilter) casesProcedureFilter.value = "";
@@ -6076,7 +6180,7 @@
         document.getElementById("casesBreadcrumb").innerHTML = `<button type="button" class="mini-btn" data-cases-back-years>Progress Overview</button><span class="sep" style="margin:0 8px;color:#666">/</span><strong>${escapeHtml(activeCasesStudentName)}</strong>`;
       }
 
-      async function renderProceduresForYear(yearLabel) {
+      async function renderProceduresForYear(yearLabel, updateHistory = true) {
         const panel = document.getElementById("casesProceduresPanel");
         const header = document.getElementById("casesProceduresHeader");
         const tbody = document.getElementById("casesProceduresTbody");
@@ -6084,6 +6188,14 @@
         if (!tbody || !panel) return;
         activeCasesYear = yearLabel;
         activeCasesProcedure = "";
+        activeCasesProcedureDetail = "";
+        activeCasesBlockId = "";
+        activeCasesBlockLabel = "";
+        activeCasesStudentId = "";
+        activeCasesStudentName = "";
+        recordViewFromProgressOverview = false;
+        activeCasesView = "procedures";
+        if (updateHistory) pushAdminHistory("casesCard");
         tbody.innerHTML = "";
         header.textContent = `Procedures for ${yearLabel}`;
         const all = await getAdminCaseRecords();
@@ -6115,9 +6227,17 @@
           bc.innerHTML = `<button type="button" class="mini-btn" data-cases-back-years>Clinical Records</button> <span class='sep' style='margin:0 8px;color:#666;'>/</span> <strong>${escapeHtml(yearLabel)}</strong>`;
       }
 
-      async function openCasesProcedureRecords(yearLabel, procedureName) {
+      async function openCasesProcedureRecords(yearLabel, procedureName, updateHistory = true) {
         activeCasesYear = yearLabel;
         activeCasesProcedure = procedureLabel(procedureName);
+        activeCasesProcedureDetail = "";
+        activeCasesBlockId = "";
+        activeCasesBlockLabel = "";
+        activeCasesStudentId = "";
+        activeCasesStudentName = "";
+        recordViewFromProgressOverview = false;
+        activeCasesView = "procedure-records";
+        if (updateHistory) pushAdminHistory("casesCard");
         if (casesYearSelect) casesYearSelect.value = yearLabel;
         if (casesProcedureFilter)
           casesProcedureFilter.value = activeCasesProcedure;
@@ -6139,9 +6259,17 @@
         }
       }
 
-      async function openCasesYearRecords(yearLabel) {
+      async function openCasesYearRecords(yearLabel, updateHistory = true) {
         activeCasesYear = yearLabel;
         activeCasesProcedure = "";
+        activeCasesProcedureDetail = "";
+        activeCasesBlockId = "";
+        activeCasesBlockLabel = "";
+        activeCasesStudentId = "";
+        activeCasesStudentName = "";
+        recordViewFromProgressOverview = false;
+        activeCasesView = "year-records";
+        if (updateHistory) pushAdminHistory("casesCard");
         if (casesYearSelect) casesYearSelect.value = yearLabel;
         if (casesProcedureFilter) casesProcedureFilter.value = "";
         if (casesSearchField) casesSearchField.style.display = "block";
@@ -6205,19 +6333,19 @@
         if (backStudents) { openCasesBlockStudents(activeCasesBlockId, activeCasesBlockLabel); return; }
         const crumbYears = e.target.closest("[data-cases-back-years]");
         if (crumbYears) {
-          renderCasesYears();
+          renderCasesYears(true);
           return;
         }
         const crumbProcedures = e.target.closest(
           "[data-cases-back-procedures]",
         );
         if (crumbProcedures) {
-          renderCasesYears();
+          renderCasesYears(true);
           return;
         }
         const blockBack = e.target.closest("#casesBlockBackBtn");
         if (blockBack) {
-          renderCasesYears();
+          renderCasesYears(true);
           return;
         }
         const studentBack = e.target.closest("#casesStudentBackBtn");
@@ -6229,12 +6357,13 @@
         if (listBack) {
           if (recordViewFromProgressOverview) {
             renderProgressOverview();
+            pushAdminHistory("casesCard");
           } else if (activeCasesBlockId) {
             openCasesBlockStudents(activeCasesBlockId, activeCasesBlockLabel);
           } else if (activeCasesProcedure) {
             renderProceduresForYear(activeCasesYear);
           } else {
-            renderCasesYears();
+            renderCasesYears(true);
           }
           return;
         }
@@ -7191,11 +7320,7 @@
         if (adminDashboardInitialized) return;
         adminDashboardInitialized = true;
         window.history.replaceState(
-          {
-            ...(window.history.state || {}),
-            adminPortalCard: true,
-            adminCard: "dashboardCard",
-          },
+          getAdminHistoryState("dashboardCard"),
           "",
           window.location.href,
         );
