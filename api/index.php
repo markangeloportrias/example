@@ -794,13 +794,28 @@ try {
                 $legacyStmt->execute([$caseId,$case['instructor_uid'] ?: null,$case['instructor_name'] ?: 'Clinical Instructor','instructor',$legacy,'legacy-case:'.$caseId]);
             }
 
-            $requestStmt = $pdo->prepare("SELECT id,rejection_remarks,rejected_at FROM edit_requests WHERE student_id=? AND procedure_key=? AND status='rejected' AND rejection_remarks IS NOT NULL");
-            $requestStmt->execute([$case['student_id'],$case['procedure_key']]);
+            $requestStmt = $pdo->prepare("SELECT id,procedure_key,case_numbers,rejection_remarks,rejected_at FROM edit_requests WHERE student_id=? AND status='rejected' AND rejection_remarks IS NOT NULL");
+            $requestStmt->execute([$case['student_id']]);
             $insertRequestComment = $pdo->prepare("INSERT IGNORE INTO case_comments (case_id,author_uid,author_name,author_role,comment_text,source_key,created_at) VALUES (?,?,?,?,?,?,COALESCE(?,NOW()))");
+            $normalizeCommentKey = static function ($value): string {
+                return preg_replace('/[^a-z0-9]+/i', '', strtolower(trim((string)$value))) ?? '';
+            };
+            $commentNumberTail = static function (string $value): string {
+                if (!preg_match('/(\d+)$/', $value, $matches)) return '';
+                return ltrim($matches[1], '0') ?: '0';
+            };
+            $caseProcedureKey = $normalizeCommentKey($case['procedure_key']);
+            $caseNumberKey = $normalizeCommentKey($case['case_no']);
+            $caseNumberTail = $commentNumberTail($caseNumberKey);
             foreach ($requestStmt->fetchAll() as $request) {
-                $numbersStmt = $pdo->prepare('SELECT case_numbers FROM edit_requests WHERE id=?'); $numbersStmt->execute([$request['id']]);
-                $numbers = json_decode((string)$numbersStmt->fetchColumn(), true); if (!is_array($numbers)) $numbers=[];
-                if (!in_array((string)$case['case_no'], array_map('strval',$numbers), true)) continue;
+                if ($normalizeCommentKey($request['procedure_key']) !== $caseProcedureKey) continue;
+                $numbers = json_decode((string)$request['case_numbers'], true); if (!is_array($numbers)) $numbers=[];
+                $numberKeys = array_map($normalizeCommentKey, $numbers);
+                $numberMatches = in_array($caseNumberKey, $numberKeys, true);
+                if (!$numberMatches && $caseNumberTail !== '') {
+                    $numberMatches = in_array($caseNumberTail, array_map($commentNumberTail, $numberKeys), true);
+                }
+                if (!$numberMatches) continue;
                 $remark = trim((string)$request['rejection_remarks']);
                 if ($remark === '' || preg_match('/^(none|n\/?a|not applicable|null|undefined|-)$/i', $remark)) continue;
                 $insertRequestComment->execute([$caseId,null,$case['instructor_name'] ?: 'Clinical Instructor','instructor',$remark,'edit-request:'.$request['id'],$request['rejected_at']]);
