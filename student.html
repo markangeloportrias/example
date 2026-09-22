@@ -1898,8 +1898,18 @@
       }
 
       function startRestoredStudentDashboard() {
+        window.history.replaceState(
+          {
+            ...(window.history.state || {}),
+            studentPortalTab: "dashboard",
+            studentTab: "dashboard",
+            studentProcedure: "",
+          },
+          "",
+          window.location.href,
+        );
         displayStudentDashboard(true);
-        switchTab("dashboard");
+        switchTab("dashboard", undefined, false);
         startMyRecordsAutoRefresh();
         startStudentChatUnreadRefresh(false);
       }
@@ -4646,7 +4656,19 @@
         thread.scrollTop = thread.scrollHeight;
       }
 
-      function switchTab(tabName, key) {
+      function switchTab(tabName, key, updateHistory = true) {
+        if (updateHistory) {
+          window.history.pushState(
+            {
+              ...(window.history.state || {}),
+              studentPortalTab: "dashboard",
+              studentTab: tabName,
+              studentProcedure: key || "",
+            },
+            "",
+            window.location.href,
+          );
+        }
         currentTab = tabName;
 
         // Find elements
@@ -4740,6 +4762,12 @@
           setSidebarActive("settings");
         }
       }
+
+      window.addEventListener("popstate", (event) => {
+        const state = event.state;
+        if (!state?.studentPortalTab) return;
+        switchTab(state.studentTab || "dashboard", state.studentProcedure || "", false);
+      });
 
       function applyStudentProgressProcedureFilter(procedureKey) {
         const selectedKey = procedureKey === "all" || PROCEDURE_TARGETS[procedureKey]
