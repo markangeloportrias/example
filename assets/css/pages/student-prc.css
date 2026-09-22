@@ -852,3 +852,246 @@ html body.role-student #prcPreviewOverlay .prc-export-applicant {
   font: 14.67px/1.15 "Times New Roman", Times, serif;
 }
 html body.role-student #prcPreviewOverlay .prc-export-school-label { margin-left: 72px; }
+
+/* PRC preview only: make the document viewer usable on phones while keeping
+   the desktop paper geometry unchanged. */
+@media screen and (max-width: 720px) {
+  html body.role-student #prcPreviewOverlay {
+    align-items: stretch !important;
+    padding: 0 !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-dialog {
+    width: 100vw !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start !important;
+    gap: 10px !important;
+    padding: 11px 12px !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-toolbar > :first-child {
+    min-width: 0;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-toolbar strong {
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-toolbar > :first-child > span {
+    max-width: 100%;
+    font-size: 10px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-toolbar-controls {
+    grid-column: 1 / -1;
+    display: flex !important;
+    width: 100%;
+    min-width: 0;
+    margin-left: 0 !important;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-zoom-control {
+    display: flex !important;
+    min-width: 0;
+    flex: 1 1 210px;
+    flex-wrap: wrap;
+    gap: 6px;
+    white-space: normal !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-zoom-control input[type="range"] {
+    flex: 1 1 90px;
+    min-width: 80px;
+    width: auto;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-close {
+    flex: 0 0 36px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-pages {
+    min-width: 0;
+    padding: 10px !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-form {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin-bottom: 14px;
+    padding: 28px 12px 22px !important;
+    overflow: auto !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-form.prc-export-continuation {
+    padding-top: 24px !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-heading {
+    min-height: 0;
+    margin-bottom: 8px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-logo {
+    position: static;
+    display: block;
+    width: 62px;
+    height: 62px;
+    margin: 0 auto 6px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-heading-text {
+    padding-top: 0;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-agency {
+    font-size: 12px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-city,
+  html body.role-student #prcPreviewOverlay .prc-export-board {
+    font-size: 11px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-form h1 {
+    margin: 8px 0 10px !important;
+    font-size: 16px !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-check,
+  html body.role-student #prcPreviewOverlay .prc-export-check-label,
+  html body.role-student #prcPreviewOverlay .prc-export-check-options {
+    padding-left: 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-check,
+  html body.role-student #prcPreviewOverlay .prc-export-check-label,
+  html body.role-student #prcPreviewOverlay .prc-export-check-options {
+    font-size: 11px !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-check-box {
+    width: 22px;
+    height: 20px;
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-applicant {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 4px;
+    margin-bottom: 12px !important;
+    padding-left: 0;
+    font-size: 11px;
+    line-height: 1.3;
+    white-space: normal;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-applicant .prc-export-line {
+    flex: 1 1 120px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-school-label {
+    margin-left: 0;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-school {
+    flex-basis: 150px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-table {
+    width: max-content !important;
+    min-width: 760px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-table th,
+  html body.role-student #prcPreviewOverlay .prc-export-table td {
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-certification-title {
+    width: 100%;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-affidavit {
+    white-space: normal;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-actions > button {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px !important;
+    height: auto !important;
+    padding: 8px 9px !important;
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  html body.role-student #prcPreviewOverlay #prcPreviewDownloadBtn {
+    grid-column: 1 / -1;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  html body.role-student #prcPreviewOverlay .prc-preview-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-toolbar-controls {
+    gap: 6px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-pages {
+    padding: 7px !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-form {
+    padding: 22px 9px 18px !important;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-export-table {
+    min-width: 700px;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-actions {
+    grid-template-columns: 1fr;
+  }
+
+  html body.role-student #prcPreviewOverlay .prc-preview-actions > button,
+  html body.role-student #prcPreviewOverlay #prcPreviewDownloadBtn {
+    grid-column: auto;
+  }
+}
