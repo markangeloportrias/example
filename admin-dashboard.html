@@ -2005,9 +2005,16 @@
         if (targetId === "studentsCard") {
           renderArchivedStudents();
           if (preserveNavigation) {
-            if (studentsNav.level === "blocks") renderStudentBlocks();
-            else if (studentsNav.level === "students") renderBlockStudents();
-            else renderSchoolYears();
+            if (studentsNav.level === "blocks") {
+              setStudentsNavLevel("blocks");
+              renderStudentBlocks();
+            } else if (studentsNav.level === "students") {
+              setStudentsNavLevel("students");
+              renderBlockStudents();
+            } else {
+              setStudentsNavLevel("years");
+              renderSchoolYears();
+            }
           } else if (studentsNav.level !== "years") {
             backToStudentsYears(false);
           } else {
