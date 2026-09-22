@@ -4377,11 +4377,17 @@
         requests.forEach((request, requestIndex) => {
           const status = correctionRequestStatus(request);
           const reviewerName = String(request.reviewer_name || request.reviewerName || "").trim();
+          const rejectionRemarks = status === "rejected"
+            ? String(request.rejection_remarks || request.rejectionRemarks || "").trim()
+            : "";
           const label = status === "accepted" ? `Approved${reviewerName ? ` by ${reviewerName}` : " by instructor"}` : status === "rejected" ? `Rejected${reviewerName ? ` by ${reviewerName}` : " by instructor"}` : status === "edited" ? "Edit completed" : status === "requested" ? "Pending instructor review" : "Status unavailable";
+          const rejectionRemarksMarkup = rejectionRemarks
+            ? `<div style="margin-top:6px;color:#b42318;font-size:12px;line-height:1.35;white-space:normal;"><strong>Comment:</strong> ${escapeHtml(rejectionRemarks)}</div>`
+            : "";
           const card = document.createElement("tr");
           card.className = `edit-request-row ${status === "accepted" ? "approved" : status === "rejected" ? "rejected" : "pending"}`;
           card.innerHTML = `<div class="notification-icon"><i class="fas ${status === "accepted" ? "fa-circle-check" : status === "rejected" ? "fa-circle-xmark" : "fa-clock"}"></i></div><div><div class="notification-title">${label}</div><div class="notification-meta">${request.procedure || "Clinical record"} · Case ${request.caseNo || "—"}</div><small class="notification-time">${escapeHtml(formatActivityTimestamp(request.requestedAt))} · Open case</small></div><button type="button" class="delete-edit-notification" data-delete-edit-notification="${requestIndex}" aria-label="Delete this notification"><i class="fas fa-trash"></i> Delete</button>`;
-          card.innerHTML = `<td><span class="edit-request-status ${status}"><i class="fas ${status === "accepted" ? "fa-circle-check" : status === "rejected" ? "fa-circle-xmark" : "fa-clock"}" aria-hidden="true"></i>${escapeHtml(label)}</span></td><td>${escapeHtml(request.procedure || "Clinical record")}</td><td>${escapeHtml(request.caseNo || "—")}</td><td>${escapeHtml(request.requestedAt || "—")}</td><td><button type="button" class="delete-edit-notification" data-delete-edit-notification="${requestIndex}" aria-label="Delete this notification"><i class="fas fa-trash"></i> Delete</button></td>`;
+          card.innerHTML = `<td><span class="edit-request-status ${status}"><i class="fas ${status === "accepted" ? "fa-circle-check" : status === "rejected" ? "fa-circle-xmark" : "fa-clock"}" aria-hidden="true"></i>${escapeHtml(label)}</span>${rejectionRemarksMarkup}</td><td>${escapeHtml(request.procedure || "Clinical record")}</td><td>${escapeHtml(request.caseNo || "—")}</td><td>${escapeHtml(request.requestedAt || "—")}</td><td><button type="button" class="delete-edit-notification" data-delete-edit-notification="${requestIndex}" aria-label="Delete this notification"><i class="fas fa-trash"></i> Delete</button></td>`;
           const isPendingRequest = status === "requested" || status === "pending";
           const requestActionButton = card.querySelector("[data-delete-edit-notification]");
           if (requestActionButton) {
