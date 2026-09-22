@@ -2076,9 +2076,86 @@
         if (updateHistory) pushAdminHistory(targetId);
       }
 
+      function restoreAdminFallbackNavigation() {
+        let changed = false;
+        const activeCard = Array.from(sidebarItems).find((item) => item.classList.contains("active"))?.getAttribute("data-target") || "dashboardCard";
+        if (activeCard === "studentsCard") {
+          if (studentsNav.level === "students") {
+            studentsNav.blockId = "";
+            studentsNav.blockLabel = "";
+            studentsNav.level = "blocks";
+            changed = true;
+          } else if (studentsNav.level === "blocks") {
+            studentsNav.schoolYear = "";
+            studentsNav.blockId = "";
+            studentsNav.blockLabel = "";
+            studentsNav.level = "years";
+            changed = true;
+          }
+        } else if (activeCard === "yearlyReportsCard") {
+          if (yearlyNav.level === "report") {
+            yearlyNav.studentId = "";
+            yearlyNav.studentName = "";
+            yearlyNav.level = "students";
+            changed = true;
+          } else if (yearlyNav.level === "students") {
+            yearlyNav.blockId = "";
+            yearlyNav.blockLabel = "";
+            yearlyNav.level = "blocks";
+            changed = true;
+          } else if (yearlyNav.level === "blocks") {
+            yearlyNav.schoolYear = "";
+            yearlyNav.blockId = "";
+            yearlyNav.blockLabel = "";
+            yearlyNav.level = "years";
+            changed = true;
+          }
+        } else if (activeCard === "casesCard") {
+          if (activeCasesView === "student-records") {
+            activeCasesStudentId = "";
+            activeCasesStudentName = "";
+            if (recordViewFromProgressOverview) {
+              activeCasesYear = "";
+              activeCasesBlockId = "";
+              activeCasesBlockLabel = "";
+              activeCasesView = "progress";
+            } else if (activeCasesBlockId) {
+              activeCasesView = "students";
+            } else if (activeCasesProcedure) {
+              activeCasesView = "procedures";
+            } else {
+              activeCasesView = "year-records";
+            }
+            changed = true;
+          } else if (activeCasesView === "procedure-records") {
+            activeCasesView = "procedures";
+            changed = true;
+          } else if (activeCasesView === "year-records" || activeCasesView === "procedures") {
+            activeCasesView = "years";
+            changed = true;
+          } else if (activeCasesView === "students") {
+            activeCasesBlockId = "";
+            activeCasesBlockLabel = "";
+            activeCasesView = "blocks";
+            changed = true;
+          } else if (activeCasesView === "blocks") {
+            activeCasesYear = "";
+            activeCasesView = "years";
+            changed = true;
+          }
+        }
+        if (!changed) return false;
+        window.history.replaceState(getAdminHistoryState(activeCard), "", window.location.href);
+        showCard(activeCard, false, true);
+        return true;
+      }
+
       window.addEventListener("popstate", (event) => {
         const state = event.state;
-        if (!state?.adminPortalCard) return;
+        if (!state?.adminPortalCard) {
+          restoreAdminFallbackNavigation();
+          return;
+        }
         restoreAdminHistoryState(state);
         showCard(state.adminCard || "dashboardCard", false, true);
       });

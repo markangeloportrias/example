@@ -7597,9 +7597,64 @@
         loadRecords();
       }
 
+      function restoreInstructorFallbackNavigation() {
+        let changed = false;
+        if (activeType === "students") {
+          if (instructorStudentsNav.level === "students") {
+            instructorStudentsNav.blockId = "";
+            instructorStudentsNav.blockLabel = "";
+            instructorStudentsNav.level = "blocks";
+            changed = true;
+          } else if (instructorStudentsNav.level === "blocks") {
+            instructorStudentsNav.schoolYear = "";
+            instructorStudentsNav.blockId = "";
+            instructorStudentsNav.blockLabel = "";
+            instructorStudentsNav.level = "years";
+            changed = true;
+          }
+        } else if (activeType === "student-summary" || activeType === "yearly-records" || activeType === "yearly-reports") {
+          if (yearlyRecordsNav.level === "records") {
+            yearlyRecordsNav.studentId = "";
+            yearlyRecordsNav.studentName = "";
+            yearlyRecordsNav.studentProfile = null;
+            yearlyRecordsNav.level = "students";
+            changed = true;
+          } else if (yearlyRecordsNav.level === "students") {
+            yearlyRecordsNav.blockId = "";
+            yearlyRecordsNav.blockLabel = "";
+            yearlyRecordsNav.level = "blocks";
+            changed = true;
+          } else if (yearlyRecordsNav.level === "blocks") {
+            yearlyRecordsNav.year = "";
+            yearlyRecordsNav.blockId = "";
+            yearlyRecordsNav.blockLabel = "";
+            yearlyRecordsNav.level = "years";
+            changed = true;
+          }
+        } else if (activeType === "my-records" && (selectedCurrentRecordsStudent || selectedCurrentRecordsBlock)) {
+          if (selectedCurrentRecordsStudent) selectedCurrentRecordsStudent = null;
+          else selectedCurrentRecordsBlock = null;
+          changed = true;
+        }
+        if (!changed) return false;
+        const section = activeType;
+        window.history.replaceState(getInstructorHistoryState(section), "", window.location.href);
+        setActiveSection(section, {
+          updateHistory: false,
+          preserveStudentsNavigation: true,
+          preserveYearlyProgress: true,
+          preserveCurrentRecordsBlock: true,
+          preserveSelectedStudent: true,
+        });
+        return true;
+      }
+
       window.addEventListener("popstate", (event) => {
         const state = event.state;
-        if (!state?.instructorPortalSection) return;
+        if (!state?.instructorPortalSection) {
+          restoreInstructorFallbackNavigation();
+          return;
+        }
         restoreInstructorHistoryState(state);
         setActiveSection(state.instructorSection || "dashboard", {
           updateHistory: false,
