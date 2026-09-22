@@ -4785,6 +4785,7 @@
           (!state?.studentPortalTab || state.studentTab !== "chat")
         ) {
           mobileChatInstructorSelected = false;
+          updateMobileChatConversationVisibility();
           window.history.replaceState(
             getStudentHistoryState("chat", "", false),
             "",
@@ -4795,6 +4796,7 @@
         }
         if (!state?.studentPortalTab) return;
         mobileChatInstructorSelected = state.studentTab === "chat" && Boolean(state.studentChatInstructorSelected);
+        updateMobileChatConversationVisibility();
         switchTab(state.studentTab || "dashboard", state.studentProcedure || "", false);
       });
 
