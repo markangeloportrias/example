@@ -1833,6 +1833,9 @@
       }
 
       function restoreAdminCasesView() {
+        if (activeCasesView !== "student-records") {
+          document.getElementById("casesCard")?.classList.remove("records-focus");
+        }
         if (activeCasesView === "years") return renderCasesYears(false);
         if (activeCasesView === "blocks") {
           return openCasesYearBlocks(activeCasesYear, false);
@@ -6214,6 +6217,12 @@
         recordViewFromProgressOverview = false;
         activeCasesView = "students";
         if (updateHistory) pushAdminHistory("casesCard");
+        document.getElementById("casesCard")?.classList.remove("records-focus");
+        document.getElementById("casesYearPanel").style.display = "none";
+        document.getElementById("casesBlockPanel").style.display = "none";
+        document.getElementById("casesStudentPanel").style.display = "block";
+        document.getElementById("casesListPanel").style.display = "none";
+        document.getElementById("casesBreadcrumb").innerHTML = `<button type="button" class="mini-btn" data-cases-back-years>Clinical Records</button><span class="sep" style="margin:0 8px;color:#666">/</span><button type="button" class="mini-btn" data-cases-back-blocks>${escapeHtml(activeCasesYear)}</button><span class="sep" style="margin:0 8px;color:#666">/</span><strong>${escapeHtml(activeCasesBlockLabel)}</strong>`;
         showDatabaseLoading(document.getElementById("casesStudentsTbody"), 5, "Loading students...");
         const result = await ApiClient.getBlockStudents(activeCasesBlockId, activeCasesYear, activeCasesBlockLabel);
         const students = result && result.ok && Array.isArray(result.students) ? result.students : [];
