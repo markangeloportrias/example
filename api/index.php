@@ -1264,24 +1264,31 @@ try {
                 : ($archived
                     ? ' AND archived_at IS NOT NULL'
                     : ' AND archived_at IS NULL AND reviewer_dismissed_at IS NULL');
-            $stmt = $pdo->prepare('SELECT edit_requests.*,
-                COALESCE(edit_requests.reviewer_name,
-                (SELECT CASE
+            $stmt = $pdo->prepare('SELECT edit_requests.* FROM edit_requests WHERE 1=1' . $where . ' ORDER BY requested_at DESC');
+            $stmt->execute($user['role'] === 'student' ? [$user['user_uid']] : []);
+            $requests = $stmt->fetchAll();
+            $legacyReviewer = $pdo->prepare('SELECT CASE
                     WHEN audit_trail.actor_role = \'instructor\' THEN COALESCE(instructor_accounts.display_name, instructor_accounts.username, audit_trail.actor_uid)
                     WHEN audit_trail.actor_role = \'admin\' THEN \'Administrator\'
                     ELSE audit_trail.actor_uid
-                 END
-                 FROM audit_trail
-                 LEFT JOIN instructor_accounts ON instructor_accounts.account_uid = audit_trail.actor_uid
-                 WHERE audit_trail.entity_type = \'edit_request\'
-                   AND audit_trail.entity_uid = CAST(edit_requests.id AS CHAR)
-                   AND audit_trail.action_name = CASE WHEN edit_requests.status = \'approved\' THEN \'approve\' WHEN edit_requests.status = \'rejected\' THEN \'reject\' ELSE \'\' END
-                   AND audit_trail.created_at BETWEEN COALESCE(edit_requests.approved_at, edit_requests.rejected_at) - INTERVAL 1 SECOND AND COALESCE(edit_requests.approved_at, edit_requests.rejected_at) + INTERVAL 1 SECOND
-                 ORDER BY audit_trail.id DESC
-                 LIMIT 1)) AS reviewer_name
-                FROM edit_requests WHERE 1=1' . $where . ' ORDER BY requested_at DESC');
-            $stmt->execute($user['role'] === 'student' ? [$user['user_uid']] : []);
-            respond(['ok' => true, 'requests' => $stmt->fetchAll()]);
+                END
+                FROM audit_trail
+                LEFT JOIN instructor_accounts ON instructor_accounts.account_uid = audit_trail.actor_uid
+                WHERE audit_trail.entity_type = \'edit_request\'
+                  AND audit_trail.entity_uid = ?
+                  AND audit_trail.action_name = ?
+                ORDER BY ABS(TIMESTAMPDIFF(SECOND, audit_trail.created_at, ?)), audit_trail.id DESC
+                LIMIT 1');
+            foreach ($requests as &$request) {
+                if (trim((string)($request['reviewer_name'] ?? '')) !== '') continue;
+                $decisionAction = $request['status'] === 'approved' ? 'approve' : ($request['status'] === 'rejected' ? 'reject' : '');
+                $decisionAt = $request['status'] === 'approved' ? ($request['approved_at'] ?? '') : ($request['rejected_at'] ?? '');
+                if ($decisionAction === '' || $decisionAt === '') continue;
+                $legacyReviewer->execute([(string)$request['id'], $decisionAction, $decisionAt]);
+                $request['reviewer_name'] = $legacyReviewer->fetchColumn() ?: null;
+            }
+            unset($request);
+            respond(['ok' => true, 'requests' => $requests]);
         }
         if ($method === 'POST' && $user['role'] === 'student') {
             requireFields($data, ['procedure_key', 'procedure_name']);
