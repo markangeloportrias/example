@@ -6179,6 +6179,7 @@
       }
 
       async function openCasesYearBlocks(yearLabel, updateHistory = true) {
+        const requestedYear = String(yearLabel || "");
         activeCasesYear = yearLabel;
         activeCasesProcedure = "";
         activeCasesProcedureDetail = "";
@@ -6196,6 +6197,7 @@
         document.getElementById("casesListPanel").style.display = "none";
         document.getElementById("casesBreadcrumb").innerHTML = `<button type="button" class="mini-btn" data-cases-back-years>Clinical Records</button><span class="sep" style="margin:0 8px;color:#666">/</span><strong>${escapeHtml(yearLabel)}</strong>`;
         const result = await ApiClient.getStudentBlocks(yearLabel);
+        if (activeCasesView !== "blocks" || String(activeCasesYear || "") !== requestedYear) return;
         const blocks = result && result.ok && Array.isArray(result.blocks) ? result.blocks : [];
         const tbody = document.getElementById("casesBlocksTbody");
         const empty = document.getElementById("casesBlocksEmpty");
@@ -6214,7 +6216,9 @@
       }
 
       async function openCasesBlockStudents(blockId, blockLabel, updateHistory = true) {
-        activeCasesBlockId = String(blockId || "");
+        const requestedBlockId = String(blockId || "");
+        const requestedYear = String(activeCasesYear || "");
+        activeCasesBlockId = requestedBlockId;
         activeCasesBlockLabel = blockLabel || "";
         activeCasesStudentId = "";
         activeCasesStudentName = "";
@@ -6231,8 +6235,10 @@
         document.getElementById("casesBreadcrumb").innerHTML = `<button type="button" class="mini-btn" data-cases-back-years>Clinical Records</button><span class="sep" style="margin:0 8px;color:#666">/</span><button type="button" class="mini-btn" data-cases-back-blocks>${escapeHtml(activeCasesYear)}</button><span class="sep" style="margin:0 8px;color:#666">/</span><strong>${escapeHtml(activeCasesBlockLabel)}</strong>`;
         showDatabaseLoading(document.getElementById("casesStudentsTbody"), 5, "Loading students...");
         const result = await ApiClient.getBlockStudents(activeCasesBlockId, activeCasesYear, activeCasesBlockLabel);
+        if (activeCasesView !== "students" || String(activeCasesBlockId || "") !== requestedBlockId || String(activeCasesYear || "") !== requestedYear) return;
         const students = result && result.ok && Array.isArray(result.students) ? result.students : [];
         const allCases = await getAdminCaseRecords();
+        if (activeCasesView !== "students" || String(activeCasesBlockId || "") !== requestedBlockId || String(activeCasesYear || "") !== requestedYear) return;
         const tbody = document.getElementById("casesStudentsTbody");
         const empty = document.getElementById("casesStudentsEmpty");
         tbody.innerHTML = "";
