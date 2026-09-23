@@ -3054,6 +3054,15 @@
     try { return await mysqlRequest('case-comments/' + encodeURIComponent(commentId) + '/delete', { method: 'PATCH', body: '{}' }); }
     catch (error) { return { ok: false, message: error.message }; }
   };
+  ApiClient.deleteCaseComment = async function (commentId, archived) {
+    try {
+      if (!archived) {
+        var archivedResult = await ApiClient.archiveCaseComment(commentId);
+        if (!archivedResult || !archivedResult.ok) return archivedResult || { ok: false, message: 'Unable to remove the comment.' };
+      }
+      return await ApiClient.permanentlyDeleteCaseComment(commentId);
+    } catch (error) { return { ok: false, message: error.message }; }
+  };
   ApiClient.addTeacherRemarks = async function (caseId,remarks,checkedBy,instructorId) {
     return ApiClient.updateRecordStatus(caseId,'Under Review',{remarks:remarks,instructor_name:checkedBy,instructor_id:instructorId});
   };

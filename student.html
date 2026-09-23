@@ -2883,6 +2883,47 @@
 
             header.appendChild(identity);
 
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "feedback-comment-delete";
+            deleteButton.innerHTML = '<i class="fas fa-trash" aria-hidden="true"></i><span>Delete</span>';
+            deleteButton.style.cssText = "margin-left:auto;display:inline-flex;align-items:center;gap:5px;border:1px solid #f3b7b7;border-radius:7px;padding:5px 8px;background:#fff5f5;color:#b42318;font-size:11px;font-weight:800;cursor:pointer;";
+            const commentIds = (comment.duplicateIds || [comment.id]).filter((id) => id != null && !String(id).startsWith("legacy-"));
+            deleteButton.disabled = !commentIds.length;
+            deleteButton.title = commentIds.length ? "Delete this comment" : "This comment cannot be deleted";
+            deleteButton.addEventListener("click", (event) => {
+              event.stopPropagation();
+              if (!commentIds.length) return;
+              showOptionPane({
+                title: "Delete Comment?",
+                message: "This comment will be removed from your feedback.",
+                buttons: [
+                  { label: "Cancel", variant: "secondary" },
+                  {
+                    label: "Delete",
+                    variant: "danger",
+                    onClick: async () => {
+                      for (const commentId of commentIds) {
+                        const result = await ApiClient.deleteCaseComment(commentId, archived);
+                        if (!result?.ok) {
+                          showOptionPane({ title: "Delete Failed", message: result?.message || "Unable to delete this comment." });
+                          return;
+                        }
+                      }
+                      const remaining = comments.filter((entry) => entry !== comment && !(entry.duplicateIds || []).some((id) => commentIds.includes(id)));
+                      if (config.record) {
+                        config.record.feedbackComments = remaining;
+                        config.record.feedbackCommentsLoaded = true;
+                      }
+                      renderInstructorFeedbackCard({ ...config, comments: remaining });
+                      optionPaneOverlay.classList.add("open");
+                    },
+                  },
+                ],
+              });
+            });
+            header.appendChild(deleteButton);
+
             const body = document.createElement("div");
             body.className = "feedback-comment-body";
             body.textContent = normalizeInstructorFeedback(comment.comment_text) || "Comment unavailable.";
