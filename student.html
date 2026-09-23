@@ -2753,7 +2753,11 @@
         }
         const feedbackGroups = new Map();
         comments.forEach((comment) => {
-          const key = [comment.author_name, comment.comment_text, comment.created_at].join("|");
+          // Repeated saves/imports can give the same feedback different timestamps.
+          const key = JSON.stringify([
+            String(comment.author_name || "").trim().toLowerCase(),
+            String(comment.comment_text || "").trim(),
+          ]);
           const group = feedbackGroups.get(key) || [];
           group.push(comment);
           feedbackGroups.set(key, group);

@@ -25,5 +25,19 @@ vm.runInContext(source.slice(start, end), context);
   await context.openInstructorFeedback(record);
   assert.equal(panes[1].title, 'Unable to Load Feedback');
   assert.equal(panes[1].message, response.message);
+  response = { ok: true, comments: [
+    { id: 21, author_name: 'Instructor2', comment_text: 'change some parts', created_at: '2026-09-23 09:26:40' },
+    { id: 20, author_name: 'Instructor2', comment_text: 'change some parts', created_at: '2026-09-23 09:26:12' },
+    { id: 19, author_name: ' instructor2 ', comment_text: 'change some parts ', created_at: '2026-09-23 09:26:01' },
+    { id: 18, author_name: 'Instructor3', comment_text: 'change some parts', created_at: '2026-09-23 09:25:00' },
+    { id: 17, author_name: 'Instructor2', comment_text: 'Check the date', created_at: '2026-09-23 09:24:00' },
+  ] };
+  await context.openInstructorFeedback(record);
+  const feedback = panes[2].feedback.comments;
+  assert.equal(feedback.length, 3, 'Repeated feedback appears once; distinct authors and comments remain');
+  assert.equal(feedback[0].id, 21, 'Keep the newest copy from the API ordering');
+  assert.deepEqual(Array.from(feedback[0].duplicateIds), [21, 20, 19]);
+  await context.openInstructorFeedback(record, true);
+  assert.equal(panes[3].feedback.comments.length, 3, 'Archived feedback uses the same grouping');
   console.log('PASS: zero-ID feedback loads saved comments; request failures are visible');
 })().catch(error => { console.error(error); process.exitCode = 1; });
