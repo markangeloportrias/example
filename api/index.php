@@ -856,12 +856,16 @@ try {
                 $stmt=$pdo->prepare('DELETE FROM case_comments WHERE id=?'.$deleteFilter);
                 $stmt->execute([$id]);
                 $deleted = $stmt->rowCount() > 0;
-                if ($deleted && strpos((string)($comment['source_key'] ?? ''), 'legacy-case:') === 0) {
+                $sourceKey = (string)($comment['source_key'] ?? '');
+                // Review comments are also mirrored in case_records.teacher_remarks.
+                // Clear the mirror when it contains the deleted comment so the GET
+                // endpoint cannot recreate that same comment after deletion.
+                if ($deleted && ($sourceKey === '' || strpos($sourceKey, 'legacy-case:') === 0)) {
                     $clearCase = $pdo->prepare('UPDATE case_records SET teacher_remarks=NULL WHERE id=? AND teacher_remarks=?');
                     $clearCase->execute([$comment['case_id'], $comment['comment_text']]);
                 }
-                if ($deleted && strpos((string)($comment['source_key'] ?? ''), 'edit-request:') === 0) {
-                    $requestId = explode(':', (string)$comment['source_key'])[1];
+                if ($deleted && strpos($sourceKey, 'edit-request:') === 0) {
+                    $requestId = explode(':', $sourceKey)[1];
                     $clearRequest = $pdo->prepare('UPDATE edit_requests SET rejection_remarks=NULL WHERE id=? AND rejection_remarks=?');
                     $clearRequest->execute([$requestId, $comment['comment_text']]);
                 }
