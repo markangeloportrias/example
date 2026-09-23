@@ -62,10 +62,16 @@ try {
 
 function ensureCaseCommentsTable(PDO $pdo): void
 {
-    if (portalTableExists($pdo, 'case_comments')) return;
+    if (portalTableExists($pdo, 'case_comments')) {
+        if (!columnExists($pdo, 'case_comments', 'record_scope')) {
+            $pdo->exec('ALTER TABLE case_comments ADD COLUMN record_scope CHAR(64) NULL, ADD INDEX idx_comment_scope (record_scope)');
+        }
+        return;
+    }
     $pdo->exec("CREATE TABLE IF NOT EXISTS case_comments (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         case_id INT UNSIGNED NOT NULL,
+        record_scope CHAR(64) NULL,
         author_uid VARCHAR(80) NULL,
         author_name VARCHAR(255) NOT NULL,
         author_role ENUM('instructor','admin') NOT NULL DEFAULT 'instructor',
@@ -76,6 +82,7 @@ function ensureCaseCommentsTable(PDO $pdo): void
         archived_by VARCHAR(80) NULL,
         UNIQUE KEY uq_case_comments_source (source_key),
         INDEX idx_case_comments_case (case_id, archived_at, created_at),
+        INDEX idx_comment_scope (record_scope),
         CONSTRAINT fk_case_comments_case FOREIGN KEY (case_id) REFERENCES case_records(id)
           ON UPDATE CASCADE ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");

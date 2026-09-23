@@ -1,6 +1,15 @@
 <?php
 declare(strict_types=1);
 
+// Imported databases can reuse numeric case IDs across procedures.
+function caseCommentScope(array $record): string
+{
+    return hash('sha256', json_encode(array_map(
+        static fn($field) => (string)($record[$field] ?? ''),
+        ['id', 'student_id', 'procedure_key', 'academic_year', 'created_at']
+    ), JSON_THROW_ON_ERROR));
+}
+
 // Reuse the exact predicate for the locked read and the write. An imported
 // database may lack the unique key that normally makes id sufficient.
 function caseMutationSelection(string $id, array $identity, ?string $owner = null, bool $archived = false): array
