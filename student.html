@@ -2936,8 +2936,11 @@
                           config.record.teacherRemarks = "";
                         }
                       }
-                      renderInstructorFeedbackCard({ ...config, comments: remaining });
-                      optionPaneOverlay.classList.add("open");
+                      showOptionPane({
+                        title: "Comment Deleted",
+                        message: "Comment deleted successfully.",
+                        buttons: [{ label: "OK", variant: "primary" }],
+                      });
                     },
                   },
                 ],
