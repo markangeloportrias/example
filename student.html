@@ -5887,12 +5887,12 @@
 
       function buildPrcExportTable(procedureKey, records, startIndex = 0, rowCount = PROCEDURE_TARGETS[procedureKey] || 5) {
         const geometry = {
-          "delivery-handled": { width: 95.97, columns: [18.87, 4.97, 12.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] },
-          "delivery-assisted": { width: 95.97, columns: [18.87, 4.97, 12.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] },
-          suturing: { width: 99.45, columns: [18.21, 4.79, 12.25, 6.92, 17.56, 11.94, 9.62, 8.66, 10.05] },
-          "iv-insertion": { width: 99.03, columns: [18.30, 4.81, 12.31, 6.95, 17.74, 10.61, 9.66, 9.66, 9.96] },
-          "internal-exam": { width: 99.03, columns: [18.29, 4.82, 16.09, 9.98, 13.69, 11.04, 9.77, 7.96, 8.39] },
-        }[procedureKey] || { width: 95.97, columns: [18.87, 4.97, 12.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] };
+          "delivery-handled": { width: 95.97, columns: [15.87, 4.97, 15.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] },
+          "delivery-assisted": { width: 95.97, columns: [15.87, 4.97, 15.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] },
+          suturing: { width: 99.45, columns: [15.21, 4.79, 15.25, 6.92, 17.56, 11.94, 9.62, 8.66, 10.05] },
+          "iv-insertion": { width: 99.03, columns: [15.30, 4.81, 15.31, 6.95, 17.74, 10.61, 9.66, 9.66, 9.96] },
+          "internal-exam": { width: 99.03, columns: [15.29, 4.82, 19.09, 9.98, 13.69, 11.04, 9.77, 7.96, 8.39] },
+        }[procedureKey] || { width: 95.97, columns: [15.87, 4.97, 15.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] };
         const pageRecords = records.slice(startIndex, startIndex + rowCount);
         const rows = pageRecords.map((record, rowIndex) => `<tr>
           <td>${startIndex + rowIndex + 1}. ${prcExportCell(record.patient_name, record.patient_address)}</td>
@@ -6236,6 +6236,35 @@
         copiedNodes.forEach((node) => body.insertBefore(node, bodyChildren[endIndex]));
       }
 
+      function setPrcTemplateColumnWidths(xml) {
+        const columnShift = 520;
+        Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "tbl")).forEach((table) => {
+          const gridColumns = Array.from(table.getElementsByTagNameNS(PRC_WORD_NS, "gridCol"));
+          const widths = gridColumns.map((column) => Number(column.getAttributeNS(PRC_WORD_NS, "w")) || 0);
+          if (widths.length < 3 || widths.some((width) => width <= 0)) return;
+          const shift = Math.min(columnShift, Math.max(0, widths[0] - 1));
+          widths[0] -= shift;
+          widths[2] += shift;
+          gridColumns.forEach((column, index) => column.setAttributeNS(PRC_WORD_NS, "w:w", String(widths[index])));
+          Array.from(table.children)
+            .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tr")
+            .forEach((row) => {
+              let columnIndex = 0;
+              Array.from(row.children)
+                .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tc")
+                .forEach((cell) => {
+                  const cellProperties = prcEnsureWordChild(xml, cell, "tcPr");
+                  const spanNode = Array.from(cellProperties.children).find((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "gridSpan");
+                  const span = Math.max(1, Number(spanNode?.getAttributeNS(PRC_WORD_NS, "val")) || 1);
+                  const cellWidth = prcEnsureWordChild(xml, cellProperties, "tcW");
+                  cellWidth.setAttributeNS(PRC_WORD_NS, "w:w", String(widths.slice(columnIndex, columnIndex + span).reduce((sum, value) => sum + value, 0)));
+                  cellWidth.setAttributeNS(PRC_WORD_NS, "w:type", "dxa");
+                  columnIndex += span;
+                });
+            });
+        });
+      }
+
       function setPrcTemplateCell(cell, value, preserveNumbering = false) {
         const paragraph = cell.getElementsByTagNameNS(PRC_WORD_NS, "p")[0];
         if (!paragraph) return;
@@ -6427,7 +6456,7 @@
         addDeliveryAssistedPrcSheet(xml);
         synchronizePrcTemplateWithPreview(xml);
         ensurePrcTemplateUniqueDrawingIds(xml);
-        // Preserve the supplied DOCX page geometry and table grid exactly.
+        setPrcTemplateColumnWidths(xml);
         const studentName = exportStudent.student_name || exportStudent.name || "";
         const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
         Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "p")).forEach((paragraph) => {

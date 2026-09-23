@@ -4682,7 +4682,7 @@
           </div>
           <div class="applicant-type">Please check if applicant is:<span class="prc-check-box">✓</span> Graduate Midwife <span class="prc-check-box"></span> Registered Nurse</div>
           <div class="identity"><div>Name of Applicant: <b>${prcExportEscape(yearlyNav.studentName)}</b> &nbsp; Student ID: <b>${prcExportEscape(yearlyNav.studentId)}</b></div><div>School: <b>BOHOL ISLAND STATE UNIVERSITY CALAPE</b></div></div>
-          <table><colgroup><col style="width:18.8%"><col style="width:5%"><col style="width:12.6%"><col style="width:7.2%"><col style="width:16.5%"><col style="width:12.8%"><col style="width:8.7%"><col style="width:9%"><col style="width:9.4%"></colgroup><thead><tr>
+          <table><colgroup><col style="width:15.8%"><col style="width:5%"><col style="width:15.6%"><col style="width:7.2%"><col style="width:16.5%"><col style="width:12.8%"><col style="width:8.7%"><col style="width:9%"><col style="width:9.4%"></colgroup><thead><tr>
             <th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case<br>No.</th>
             <th rowspan="2">${diagnosisHeader}</th><th rowspan="2">Date &amp; Time<br>Performed</th>
             <th rowspan="2">Full Name, Address of<br>Facility &amp; Contact Number</th>
@@ -4722,7 +4722,7 @@
       }
 
       function buildAdminPrcDocxTable(records) {
-        const widths = [1900, 650, 1750, 1100, 1900, 1550, 1100, 900, 1250];
+        const widths = [1650, 650, 2000, 1100, 1900, 1550, 1100, 900, 1250];
         const firstHeader = `<w:tr>${adminPrcDocxCell("Name and Address of Patient", widths[0], { bold: true })}${adminPrcDocxCell("Case No.", widths[1], { bold: true })}${adminPrcDocxCell("Complete Diagnosis", widths[2], { bold: true })}${adminPrcDocxCell("Date & Time Performed", widths[3], { bold: true })}${adminPrcDocxCell("Full Name, Address of Facility & Contact Number", widths[4], { bold: true })}${adminPrcDocxCell("Supervised by", widths[5] + widths[6] + widths[7], { bold: true, gridSpan: 3 })}${adminPrcDocxCell("License No. / Expiry Date", widths[8], { bold: true })}</w:tr>`;
         const secondHeader = `<w:tr>${adminPrcDocxCell("", widths[0])}${adminPrcDocxCell("", widths[1])}${adminPrcDocxCell("", widths[2])}${adminPrcDocxCell("", widths[3])}${adminPrcDocxCell("", widths[4])}${adminPrcDocxCell("Printed Name and Contact No.", widths[5], { bold: true })}${adminPrcDocxCell("Position / Designation", widths[6], { bold: true })}${adminPrcDocxCell("Signature", widths[7], { bold: true })}${adminPrcDocxCell("", widths[8])}</w:tr>`;
         const rows = records
@@ -4996,12 +4996,12 @@
 
       function studentPrcBuildExportTable(procedureKey, records, startIndex = 0, rowCount = STUDENT_PRC_PROCEDURE_TARGETS[procedureKey] || 5) {
         const geometry = {
-          "delivery-handled": { width: 95.97, columns: [18.87, 4.97, 12.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] },
-          "delivery-assisted": { width: 95.97, columns: [18.87, 4.97, 12.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] },
-          suturing: { width: 99.45, columns: [18.21, 4.79, 12.25, 6.92, 17.56, 11.94, 9.62, 8.66, 10.05] },
-          "iv-insertion": { width: 99.03, columns: [18.30, 4.81, 12.31, 6.95, 17.74, 10.61, 9.66, 9.66, 9.96] },
-          "internal-exam": { width: 99.03, columns: [18.29, 4.82, 16.09, 9.98, 13.69, 11.04, 9.77, 7.96, 8.39] },
-        }[procedureKey] || { width: 95.97, columns: [18.87, 4.97, 12.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] };
+          "delivery-handled": { width: 95.97, columns: [15.87, 4.97, 15.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] },
+          "delivery-assisted": { width: 95.97, columns: [15.87, 4.97, 15.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] },
+          suturing: { width: 99.45, columns: [15.21, 4.79, 15.25, 6.92, 17.56, 11.94, 9.62, 8.66, 10.05] },
+          "iv-insertion": { width: 99.03, columns: [15.30, 4.81, 15.31, 6.95, 17.74, 10.61, 9.66, 9.66, 9.96] },
+          "internal-exam": { width: 99.03, columns: [15.29, 4.82, 19.09, 9.98, 13.69, 11.04, 9.77, 7.96, 8.39] },
+        }[procedureKey] || { width: 95.97, columns: [15.87, 4.97, 15.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] };
         const pageRecords = records.slice(startIndex, startIndex + rowCount);
         const rows = pageRecords.map((record, rowIndex) => `<tr>
           <td>${startIndex + rowIndex + 1}. ${studentPrcExportCell(record.patient_name, record.patient_address)}</td>
@@ -5337,6 +5337,35 @@
         copiedNodes.forEach((node) => body.insertBefore(node, bodyChildren[endIndex]));
       }
 
+      function studentPrcSetTemplateColumnWidths(xml) {
+        const columnShift = 520;
+        Array.from(xml.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "tbl")).forEach((table) => {
+          const gridColumns = Array.from(table.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "gridCol"));
+          const widths = gridColumns.map((column) => Number(column.getAttributeNS(STUDENT_PRC_WORD_NS, "w")) || 0);
+          if (widths.length < 3 || widths.some((width) => width <= 0)) return;
+          const shift = Math.min(columnShift, Math.max(0, widths[0] - 1));
+          widths[0] -= shift;
+          widths[2] += shift;
+          gridColumns.forEach((column, index) => column.setAttributeNS(STUDENT_PRC_WORD_NS, "w:w", String(widths[index])));
+          Array.from(table.children)
+            .filter((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "tr")
+            .forEach((row) => {
+              let columnIndex = 0;
+              Array.from(row.children)
+                .filter((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "tc")
+                .forEach((cell) => {
+                  const cellProperties = studentPrcEnsureWordChild(xml, cell, "tcPr");
+                  const spanNode = Array.from(cellProperties.children).find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "gridSpan");
+                  const span = Math.max(1, Number(spanNode?.getAttributeNS(STUDENT_PRC_WORD_NS, "val")) || 1);
+                  const cellWidth = studentPrcEnsureWordChild(xml, cellProperties, "tcW");
+                  cellWidth.setAttributeNS(STUDENT_PRC_WORD_NS, "w:w", String(widths.slice(columnIndex, columnIndex + span).reduce((sum, value) => sum + value, 0)));
+                  cellWidth.setAttributeNS(STUDENT_PRC_WORD_NS, "w:type", "dxa");
+                  columnIndex += span;
+                });
+            });
+        });
+      }
+
       function studentPrcSetTemplateCell(cell, value, preserveNumbering = false) {
         const paragraph = cell.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "p")[0];
         if (!paragraph) return;
@@ -5528,7 +5557,7 @@
         studentPrcAddDeliveryAssistedSheet(xml);
         studentPrcSynchronizeTemplateWithPreview(xml);
         studentPrcEnsureTemplateUniqueDrawingIds(xml);
-        // Preserve the supplied DOCX page geometry and table grid exactly.
+        studentPrcSetTemplateColumnWidths(xml);
         const studentName = exportStudent.student_name || exportStudent.name || "";
         const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
         Array.from(xml.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "p")).forEach((paragraph) => {
