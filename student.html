@@ -3780,7 +3780,9 @@
         try {
           const list = await ApiClient.getJoinedCases(
             currentStudent.student_id,
-            activeProcedureKey === "all-records" ? "" : (activeProcedureConfig?.procedureName || "Delivery Assisted"),
+            silentRefresh || activeProcedureKey === "all-records"
+              ? ""
+              : (activeProcedureConfig?.procedureName || "Delivery Assisted"),
             undefined,
             silentRefresh ? { silent: true } : undefined,
           );
