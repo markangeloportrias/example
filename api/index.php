@@ -1171,7 +1171,13 @@ try {
                 if (count($matches) > 1) respond(['ok' => false, 'message' => 'Multiple records match this selection. No comment was saved.'], 409);
                 $case = $matches[0] ?? false;
             } else {
-                $caseStmt=$pdo->prepare('SELECT id,instructor_name FROM case_records WHERE id=? AND archived_at IS NULL');$caseStmt->execute([$id]);$case=$caseStmt->fetch();
+                $commentWhere = 'id=? AND archived_at IS NULL';
+                $commentParams = [$id];
+                $caseStmt=$pdo->prepare("SELECT id,instructor_name FROM case_records WHERE $commentWhere LIMIT 2");
+                $caseStmt->execute($commentParams);
+                $matches = $caseStmt->fetchAll();
+                if (count($matches) > 1) respond(['ok'=>false,'message'=>'Multiple records match this selection. No comment was saved.'],409);
+                $case=$matches[0] ?? false;
             }
             if (!$case) respond(['ok'=>false,'message'=>'Case not found.'],404);
             $id = (string)$case['id'];
@@ -1179,8 +1185,8 @@ try {
             $pdo->beginTransaction();
             $stmt=$pdo->prepare('INSERT INTO case_comments (case_id,author_uid,author_name,author_role,comment_text) VALUES (?,?,?,?,?)');
             $stmt->execute([$id,$user['user_uid'],$authorName,$user['role']==='admin'?'admin':'instructor',$remarks]);
-            $pdo->prepare('UPDATE case_records SET teacher_remarks=? WHERE id=?')->execute([$remarks,$id]);
             $commentId=(string)$pdo->lastInsertId();
+            $pdo->prepare("UPDATE case_records SET teacher_remarks=? WHERE $commentWhere LIMIT 1")->execute(array_merge([$remarks], $commentParams));
             audit($pdo,$user,'comment','case',$id,['comment_id'=>$commentId,'remarks'=>$remarks]);
             $pdo->commit();
             respond(['ok'=>true,'id'=>$commentId]);

@@ -2728,8 +2728,9 @@
 
       async function hydrateCaseComments() {
         await Promise.all(deliveryRecords.map(async (record) => {
-          if (!record.id || typeof ApiClient.getCaseComments !== "function") return;
-          const result = await ApiClient.getCaseComments(record.id, false, record.recordIdentity);
+          if (typeof ApiClient.getCaseComments !== "function") return;
+          if (record.id == null && !record.recordIdentity) return;
+          const result = await ApiClient.getCaseComments(record.id ?? "resolve", false, record.recordIdentity);
           if (result?.ok) {
             record.feedbackComments = result.comments || [];
             record.feedbackCommentsLoaded = true;
@@ -2740,11 +2741,14 @@
       async function openInstructorFeedback(rec, archived = false) {
         let comments = [];
         let commentsLoaded = false;
-        if (rec.id && typeof ApiClient.getCaseComments === "function") {
-          const result = await ApiClient.getCaseComments(rec.id, archived, rec.recordIdentity);
+        if ((rec.id != null || rec.recordIdentity) && typeof ApiClient.getCaseComments === "function") {
+          const result = await ApiClient.getCaseComments(rec.id ?? "resolve", archived, rec.recordIdentity);
           if (result?.ok) {
             comments = result.comments || [];
             commentsLoaded = true;
+          } else {
+            showOptionPane({ title: "Unable to Load Feedback", message: result?.message || "Please retry loading the instructor comments." });
+            return;
           }
         }
         const feedbackGroups = new Map();
