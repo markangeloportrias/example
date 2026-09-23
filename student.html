@@ -4114,30 +4114,41 @@
           document.hidden ||
           (focused && ["INPUT", "TEXTAREA", "SELECT"].includes(focused.tagName))
         ) return;
+        const captureScrollState = () => ({
+          x: window.scrollX,
+          y: window.scrollY,
+          scrollers: Array.from(document.querySelectorAll(".main-content, .table-wrapper, .clinical-form-table-container"))
+            .map((element) => ({ top: element.scrollTop, left: element.scrollLeft })),
+        });
+        const restoreScrollState = (state) => {
+          window.scrollTo(state.x, state.y);
+          Array.from(document.querySelectorAll(".main-content, .table-wrapper, .clinical-form-table-container"))
+            .forEach((element, index) => {
+              const saved = state.scrollers[index];
+              if (!saved) return;
+              element.scrollTop = saved.top;
+              element.scrollLeft = saved.left;
+            });
+        };
         try {
           const sync = await ApiClient.getSyncState();
           const nextVersion = sync && sync.ok ? String(sync.version || "") : "";
           if (!nextVersion) return;
           if (nextVersion === studentLiveVersion) {
-            if (currentTab === "procedure") await loadActiveWorkspaceRecords(true);
+            if (currentTab === "procedure") {
+              const scrollState = captureScrollState();
+              await loadActiveWorkspaceRecords(true);
+              requestAnimationFrame(() => restoreScrollState(scrollState));
+            }
             return;
           }
           const isFirstCheck = !studentLiveVersion;
           studentLiveVersion = nextVersion;
           if (isFirstCheck) return;
-          const scrollX = window.scrollX;
-          const scrollY = window.scrollY;
-          const scrollers = Array.from(document.querySelectorAll(".main-content, .table-wrapper, .clinical-form-table-container"))
-            .map((element) => ({ element, top: element.scrollTop, left: element.scrollLeft }));
+          const scrollState = captureScrollState();
           if (currentTab === "procedure") await loadActiveWorkspaceRecords(true);
           else await loadMySavedRecords();
-          requestAnimationFrame(() => {
-            window.scrollTo(scrollX, scrollY);
-            scrollers.forEach(({ element, top, left }) => {
-              element.scrollTop = top;
-              element.scrollLeft = left;
-            });
-          });
+          requestAnimationFrame(() => restoreScrollState(scrollState));
         } catch (error) {
           console.warn("Student live synchronization unavailable:", error);
         }
