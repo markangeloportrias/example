@@ -1530,7 +1530,7 @@
 <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20260923-comment-delete-3"></script>
+    <script src="assets/js/api-client.js?v=20260923-records-refresh-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -2663,9 +2663,9 @@
         );
       }
 
-      async function reconcilePendingEditRequestStates() {
+      async function reconcilePendingEditRequestStates(silentRefresh = false) {
         try {
-          const liveRequests = await ApiClient.getEditRequests();
+          const liveRequests = await ApiClient.getEditRequests({}, silentRefresh ? { silent: true } : undefined);
           liveEditRequestsCache = Array.isArray(liveRequests) ? liveRequests : [];
           liveEditRequestsLoaded = true;
           const studentId = String(getCurrentStudentId() || "");
@@ -2727,10 +2727,11 @@
       }
 
       async function hydrateCaseComments() {
+        const silentRefresh = arguments[0] === true;
         await Promise.all(deliveryRecords.map(async (record) => {
           if (typeof ApiClient.getCaseComments !== "function") return;
           if (record.id == null && !record.recordIdentity) return;
-          const result = await ApiClient.getCaseComments(record.id ?? "resolve", false, record.recordIdentity);
+          const result = await ApiClient.getCaseComments(record.id ?? "resolve", false, record.recordIdentity, silentRefresh ? { silent: true } : undefined);
           if (result?.ok) {
             record.feedbackComments = result.comments || [];
             record.feedbackCommentsLoaded = true;
@@ -3769,7 +3770,7 @@
         }
       }
 
-      async function loadActiveWorkspaceRecords() {
+      async function loadActiveWorkspaceRecords(silentRefresh = false) {
         if (!currentStudent || !currentStudent.student_id) {
           deliveryRecords = [];
           renderDeliveryRecordsTable();
@@ -3780,6 +3781,8 @@
           const list = await ApiClient.getJoinedCases(
             currentStudent.student_id,
             activeProcedureKey === "all-records" ? "" : (activeProcedureConfig?.procedureName || "Delivery Assisted"),
+            undefined,
+            silentRefresh ? { silent: true } : undefined,
           );
 
           deliveryRecords = list.map((rec) => ({
@@ -3814,8 +3817,8 @@
             editRequestStatus: rec.edit_request_status || "",
           }));
 
-          await reconcilePendingEditRequestStates();
-          await hydrateCaseComments();
+          await reconcilePendingEditRequestStates(silentRefresh);
+          await hydrateCaseComments(silentRefresh);
           deliveryRecords.forEach((record) => {
             if (record.editRequestStatus) {
               setEditRequestStatus(record, record.editRequestStatus);
@@ -4112,7 +4115,11 @@
         try {
           const sync = await ApiClient.getSyncState();
           const nextVersion = sync && sync.ok ? String(sync.version || "") : "";
-          if (!nextVersion || nextVersion === studentLiveVersion) return;
+          if (!nextVersion) return;
+          if (nextVersion === studentLiveVersion) {
+            if (currentTab === "procedure") await loadActiveWorkspaceRecords(true);
+            return;
+          }
           const isFirstCheck = !studentLiveVersion;
           studentLiveVersion = nextVersion;
           if (isFirstCheck) return;
@@ -4120,7 +4127,8 @@
           const scrollY = window.scrollY;
           const scrollers = Array.from(document.querySelectorAll(".main-content, .table-wrapper, .clinical-form-table-container"))
             .map((element) => ({ element, top: element.scrollTop, left: element.scrollLeft }));
-          await loadMySavedRecords();
+          if (currentTab === "procedure") await loadActiveWorkspaceRecords(true);
+          else await loadMySavedRecords();
           requestAnimationFrame(() => {
             window.scrollTo(scrollX, scrollY);
             scrollers.forEach(({ element, top, left }) => {

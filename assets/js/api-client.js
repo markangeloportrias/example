@@ -2744,12 +2744,12 @@
       return { ok: false, message: error.message };
     }
   };
-  ApiClient.getJoinedCases = async function (studentId, procedureName, searchTerm) {
+  ApiClient.getJoinedCases = async function (studentId, procedureName, searchTerm, requestOptions) {
     var query = 'cases';
     if (normalize(studentId)) {
       query += '?student_id=' + encodeURIComponent(normalize(studentId));
     }
-    var result = await mysqlRequest(query);
+    var result = await mysqlRequest(query, requestOptions || {});
     return filterApiCases(result.cases || [], procedureName, searchTerm);
   };
   ApiClient.deleteCaseRecord = async function (studentId, caseId, identity) {
@@ -2887,9 +2887,9 @@
       return Object.assign({},r,{studentId:r.student_id,type:r.procedure_key,caseNumbers:typeof r.case_numbers==='string'?JSON.parse(r.case_numbers||'[]'):r.case_numbers,requestedAt:r.requested_at});
     });
   };
-  ApiClient.getEditRequests = async function (filters) {
+  ApiClient.getEditRequests = async function (filters, requestOptions) {
     var query = filters && filters.archived ? '?archived=1' : '';
-    var result=await mysqlRequest('edit-requests' + query);
+    var result=await mysqlRequest('edit-requests' + query, requestOptions || {});
     return (result.requests||[]).map(function(r){var numbers=r.case_numbers;if(typeof numbers==='string'){try{numbers=JSON.parse(numbers||'[]');}catch(e){numbers=[];}}numbers=Array.isArray(numbers)?numbers:[];return Object.assign({},r,{studentId:r.student_id,type:r.procedure_key,procedureKey:r.procedure_key,procedure:r.procedure_name,caseNumbers:numbers,caseNo:numbers[0]||'',caseKey:String(r.id),requestedAt:r.requested_at});});
   };
   ApiClient.archiveEditRequest = async function (requestId, request) {
@@ -3034,11 +3034,11 @@
     }
     catch (error) { return { ok: false, message: error.message }; }
   };
-  ApiClient.getCaseComments = async function (caseId, archived, recordIdentity) {
+  ApiClient.getCaseComments = async function (caseId, archived, recordIdentity, requestOptions) {
     try {
       var query = 'case-comments?case_id=' + encodeURIComponent(caseId) + '&archived=' + (archived ? '1' : '0');
       if (recordIdentity && typeof recordIdentity === 'object') query += '&record_identity=' + encodeURIComponent(JSON.stringify(recordIdentity));
-      var result = await mysqlRequest(query);
+      var result = await mysqlRequest(query, requestOptions || {});
       return { ok: true, comments: result.comments || [] };
     } catch (error) { return { ok: false, comments: [], message: error.message }; }
   };
