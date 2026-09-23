@@ -3054,9 +3054,14 @@
     try { return await mysqlRequest('case-comments/' + encodeURIComponent(commentId) + '/delete', { method: 'PATCH', body: '{}' }); }
     catch (error) { return { ok: false, message: error.message }; }
   };
-  ApiClient.deleteCaseComment = async function (commentId) {
+  ApiClient.deleteCaseComment = async function (commentId, fallback) {
     try {
-      return await ApiClient.permanentlyDeleteCaseComment(commentId);
+      var normalizedId = commentId == null ? '' : String(commentId).trim();
+      if (normalizedId !== '' && !normalizedId.startsWith('legacy-')) {
+        return await ApiClient.permanentlyDeleteCaseComment(normalizedId);
+      }
+      if (!fallback || typeof fallback !== 'object') return { ok: false, message: 'This comment has no record identity.' };
+      return await mysqlRequest('case-comments/resolve/delete', { method: 'PATCH', body: JSON.stringify(fallback) });
     } catch (error) { return { ok: false, message: error.message }; }
   };
   ApiClient.addTeacherRemarks = async function (caseId,remarks,checkedBy,instructorId) {

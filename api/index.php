@@ -839,6 +839,48 @@ try {
             $sql=$action==='archive'?'UPDATE case_comments SET archived_at=NOW(),archived_by=? WHERE id=? AND archived_at IS NULL':'UPDATE case_comments SET archived_at=NULL,archived_by=NULL WHERE id=? AND archived_at IS NOT NULL';
             $stmt=$pdo->prepare($sql);$stmt->execute($action==='archive'?[$user['user_uid'],$id]:[$id]);audit($pdo,$user,$action,'case_comment',$id);respond(['ok'=>$stmt->rowCount()>0]);
         }
+        if ($method === 'PATCH' && $id === 'resolve' && $action === 'delete') {
+            if ($user['role'] !== 'student') respond(['ok'=>false,'message'=>'Access denied.'],403);
+            $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
+            $commentText = trim((string)($data['comment_text'] ?? ''));
+            if ($commentText === '') respond(['ok'=>false,'message'=>'Comment text is required.'],422);
+            [$resolveWhere, $resolveParams] = caseMutationSelection('resolve', $identity, $user['role'] === 'student' ? $user['user_uid'] : null);
+            $caseStmt = $pdo->prepare("SELECT * FROM case_records WHERE $resolveWhere LIMIT 2");
+            $caseStmt->execute($resolveParams);
+            $matches = $caseStmt->fetchAll();
+            if (count($matches) > 1) respond(['ok'=>false,'message'=>'Multiple records match this comment.'],409);
+            $case = $matches[0] ?? false;
+            if (!$case) respond(['ok'=>false,'message'=>'Clinical record not found or access is denied.'],404);
+
+            $commentScope = caseCommentScope($case);
+            $commentStmt = $pdo->prepare('SELECT id,source_key FROM case_comments WHERE record_scope=? AND comment_text=? AND archived_at IS NULL');
+            $commentStmt->execute([$commentScope,$commentText]);
+            $matchingComments = $commentStmt->fetchAll();
+            $pdo->beginTransaction();
+            try {
+                $changed = false;
+                foreach ($matchingComments as $matchingComment) {
+                    $deleteStmt = $pdo->prepare('DELETE FROM case_comments WHERE id=? AND archived_at IS NULL');
+                    $deleteStmt->execute([$matchingComment['id']]);
+                    if (!$deleteStmt->rowCount()) continue;
+                    $changed = true;
+                    $sourceKey = (string)($matchingComment['source_key'] ?? '');
+                    if (strpos($sourceKey, 'edit-request:') === 0) {
+                        $requestId = explode(':', $sourceKey)[1];
+                        $pdo->prepare('UPDATE edit_requests SET rejection_remarks=NULL WHERE id=? AND rejection_remarks=?')->execute([$requestId,$commentText]);
+                    }
+                }
+                $clearCase = $pdo->prepare('UPDATE case_records SET teacher_remarks=NULL WHERE id=? AND teacher_remarks=?');
+                $clearCase->execute([$case['id'],$commentText]);
+                $changed = $changed || $clearCase->rowCount() > 0;
+                if ($changed) audit($pdo,$user,'delete_permanently','case_comment',(string)$case['id'],['comment_text'=>$commentText]);
+                $pdo->commit();
+                respond(['ok'=>$changed]);
+            } catch (Throwable $error) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $error;
+            }
+        }
         if ($method === 'PATCH' && $id !== '' && $action === 'delete') {
             // Student deletion is a single operation. Requiring a separate archive
             // request first made active comments impossible to remove when that

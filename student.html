@@ -1530,7 +1530,7 @@
 <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20260923-comment-delete-2"></script>
+    <script src="assets/js/api-client.js?v=20260923-comment-delete-3"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -2888,12 +2888,16 @@
             deleteButton.className = "feedback-comment-delete";
             deleteButton.innerHTML = '<i class="fas fa-trash" aria-hidden="true"></i><span>Delete</span>';
             deleteButton.style.cssText = "margin-left:auto;display:inline-flex;align-items:center;gap:5px;border:1px solid #f3b7b7;border-radius:7px;padding:5px 8px;background:#fff5f5;color:#b42318;font-size:11px;font-weight:800;cursor:pointer;";
-            const commentIds = (comment.duplicateIds || [comment.id]).filter((id) => id != null && !String(id).startsWith("legacy-"));
-            deleteButton.disabled = !commentIds.length;
-            deleteButton.title = commentIds.length ? "Delete this comment" : "This comment cannot be deleted";
+            const candidateCommentIds = Array.isArray(comment.duplicateIds) && comment.duplicateIds.length
+              ? comment.duplicateIds
+              : [comment.id];
+            const commentIds = candidateCommentIds.filter((id) => id != null && String(id).trim() !== "" && !String(id).startsWith("legacy-"));
+            const canDeleteByRecord = Boolean(config.record && normalizeInstructorFeedback(comment.comment_text));
+            deleteButton.disabled = !commentIds.length && !canDeleteByRecord;
+            deleteButton.title = commentIds.length || canDeleteByRecord ? "Delete this comment" : "This comment cannot be deleted";
             deleteButton.addEventListener("click", (event) => {
               event.stopPropagation();
-              if (!commentIds.length) return;
+              if (!commentIds.length && !canDeleteByRecord) return;
               showOptionPane({
                 title: "Delete Comment?",
                 message: "This comment will be removed from your feedback.",
@@ -2903,8 +2907,22 @@
                     label: "Delete",
                     variant: "danger",
                     onClick: async () => {
-                      for (const commentId of commentIds) {
-                        const result = await ApiClient.deleteCaseComment(commentId);
+                      const existingRecordIdentity = config.record?.recordIdentity;
+                      const fallbackDelete = {
+                        record_identity: existingRecordIdentity && Object.keys(existingRecordIdentity).length
+                          ? existingRecordIdentity
+                          : {
+                          student_id: config.record?.studentId || getCurrentStudentId(),
+                          procedure_key: config.record?.databaseProcedureKey || config.record?.procedureKey || "",
+                          case_no: config.record?.caseNo || "",
+                          patient_name: config.record?.patientName || "",
+                          academic_year: config.record?.academicYear || "",
+                          },
+                        comment_text: comment.comment_text || "",
+                      };
+                      const deleteTargets = commentIds.length ? commentIds : [null];
+                      for (const commentId of deleteTargets) {
+                        const result = await ApiClient.deleteCaseComment(commentId, fallbackDelete);
                         if (!result?.ok) {
                           showOptionPane({ title: "Delete Failed", message: result?.message || "Unable to delete this comment." });
                           return;
@@ -2914,6 +2932,9 @@
                       if (config.record) {
                         config.record.feedbackComments = remaining;
                         config.record.feedbackCommentsLoaded = true;
+                        if (normalizeInstructorFeedback(config.record.teacherRemarks) === normalizeInstructorFeedback(comment.comment_text)) {
+                          config.record.teacherRemarks = "";
+                        }
                       }
                       renderInstructorFeedbackCard({ ...config, comments: remaining });
                       optionPaneOverlay.classList.add("open");
