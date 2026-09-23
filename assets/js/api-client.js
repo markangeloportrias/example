@@ -3054,12 +3054,8 @@
     try { return await mysqlRequest('case-comments/' + encodeURIComponent(commentId) + '/delete', { method: 'PATCH', body: '{}' }); }
     catch (error) { return { ok: false, message: error.message }; }
   };
-  ApiClient.deleteCaseComment = async function (commentId, archived) {
+  ApiClient.deleteCaseComment = async function (commentId) {
     try {
-      if (!archived) {
-        var archivedResult = await ApiClient.archiveCaseComment(commentId);
-        if (!archivedResult || !archivedResult.ok) return archivedResult || { ok: false, message: 'Unable to remove the comment.' };
-      }
       return await ApiClient.permanentlyDeleteCaseComment(commentId);
     } catch (error) { return { ok: false, message: error.message }; }
   };

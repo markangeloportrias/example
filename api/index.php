@@ -840,14 +840,20 @@ try {
             $stmt=$pdo->prepare($sql);$stmt->execute($action==='archive'?[$user['user_uid'],$id]:[$id]);audit($pdo,$user,$action,'case_comment',$id);respond(['ok'=>$stmt->rowCount()>0]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'delete') {
-            $ownerStmt=$pdo->prepare('SELECT c.student_id,m.case_id,m.source_key,m.comment_text FROM case_comments m JOIN case_records c ON c.id=m.case_id WHERE m.id=? AND m.archived_at IS NOT NULL');
+            // Student deletion is a single operation. Requiring a separate archive
+            // request first made active comments impossible to remove when that
+            // intermediate request failed or was blocked by the old owner lookup.
+            $allowActiveDelete = $user['role'] === 'student';
+            $archiveFilter = $allowActiveDelete ? '' : ' AND m.archived_at IS NOT NULL';
+            $ownerStmt=$pdo->prepare('SELECT c.student_id,m.case_id,m.source_key,m.comment_text FROM case_comments m JOIN case_records c ON c.id=m.case_id WHERE m.id=?'.$archiveFilter);
             $ownerStmt->execute([$id]);
             $comment=$ownerStmt->fetch();
-            if (!$comment) respond(['ok'=>false,'message'=>'Archived comment not found.'],404);
+            if (!$comment) respond(['ok'=>false,'message'=>$allowActiveDelete ? 'Comment not found.' : 'Archived comment not found.'],404);
             if ($user['role']==='student' && $user['user_uid']!==$comment['student_id']) respond(['ok'=>false,'message'=>'Access denied.'],403);
             $pdo->beginTransaction();
             try {
-                $stmt=$pdo->prepare('DELETE FROM case_comments WHERE id=? AND archived_at IS NOT NULL');
+                $deleteFilter = $allowActiveDelete ? '' : ' AND archived_at IS NOT NULL';
+                $stmt=$pdo->prepare('DELETE FROM case_comments WHERE id=?'.$deleteFilter);
                 $stmt->execute([$id]);
                 $deleted = $stmt->rowCount() > 0;
                 if ($deleted && strpos((string)($comment['source_key'] ?? ''), 'legacy-case:') === 0) {
